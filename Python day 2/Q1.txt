@@ -1,0 +1,7 @@
+T = raw_input(if C to F:C else F.choose)
+i = raw_input("Enter the value of temperature")
+if i==C:
+    print("The temperature in fahrenheit is %dF%((i*9/5)+32)")
+elif i==F:
+    print("The temperature is %dC%((i-32)*5/9)")
+ 
