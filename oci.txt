@@ -1,0 +1,18 @@
+https://login-ewwp-saasfaprod1.fa.ocs.oraclecloud.com/oam/server/auth_cred_submit
+
+aavasocilmsgl
+ocid1.tenancy.oc1..aaaaaaaaqgk6pgnlmld2aevlcagnyvdhdaguulbdzgy7t2kkggp53qrjyutq
+bm5rnrechtal
+https://objectstorage.ap-mumbai-1.oraclecloud.com
+ocid1.user.oc1..aaaaaaaandrhnstzaxvyqqzcpo3divzpawgrgjw6ymr3lytr4dxubo6xvyia
+https://cloud.oracle.com/object-storage/buckets/bm5rnrechtal/OS_FUSION_AAVAS_DATA_01/objects?region=ap-mumbai-1
+
+
+Secret Key - 6B2fz5XtFmJKp1qomxDCHzVKNuUtmlbvToudq0E+PAM=
+Access Key - d18c02ee7ae07688ce7e3c5e8accb41bdd5677d1
+Bucket Name -  OS_FUSION_AAVAS_DATA_01
+Namespace - bm5rnrechtal
+Region – India West Mumbai
+Secret Key - 6B2fz5XtFmJKp1qomxDCHzVKNuUtmlbvToudq0E+PAM=
+Access Key - d18c02ee7ae07688ce7e3c5e8accb41bdd5677d1
+Host - objectstorage.ap-mumbai-1.oraclecloud.com
