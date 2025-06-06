@@ -1,0 +1,985 @@
+CREATE OR REPLACE PROCEDURE DISHA_MART_ANALYTICS.FINANCE_MART.LOAD_BRANCH_MONTHLY_ACTIVITY_MART()
+RETURNS VARCHAR
+LANGUAGE SQL
+EXECUTE AS CALLER
+AS '
+BEGIN
+
+    -- STEP 1: INSERT DATA INTO BRANCH_MONTHLY_ACTIVITY_MART
+	CREATE OR REPLACE TABLE DISHA_MART_ANALYTICS.FINANCE_MART.BRANCH_MONTHLY_ACTIVITY_MART (
+	PCMCS_BRANCH_ID VARCHAR(20),
+	LMS_BRANCH_ID VARCHAR(20),
+	BRANCH_NAME VARCHAR(225),
+	BRANCH_OPENING_DATE DATE,
+	BRANCH_VINTAGE VARCHAR(225),
+	STATE_NAME VARCHAR(225),
+	MONTH_YEAR VARCHAR(10),
+	MONTH_END_DATE DATE,
+	
+	BRANCH_DIRECT_INCOME_AFTER_ADJ NUMBER(38,5),
+	BRANCH_DIRECT_INTEREST_INCOME_AFTER_ADJ NUMBER(38,5),
+	BRANCH_DIRECT_OTHER_INCOME_AFTER_ADJ NUMBER(38,5),
+	BRANCH_DIRECT_EXPENDITURE_AFTER_ADJ NUMBER(38,5),
+	BRANCH_DIRECT_EMPLOYEE_BENEFIT_EXPENSE_AFTER_ADJ NUMBER(38,5),
+	BRANCH_DIRECT_OTHER_OPERATING_EXPENSES_AFTER_ADJ NUMBER(38,5),
+	BRANCH_DIRECT_PROVISION_FOR_DELIQUENCIES_AFTER_ADJ NUMBER(38,5),
+	BRANCH_DIRECT_PBT_AFTER_ADJ NUMBER(38,5),
+	BRANCH_DIRECT_DEPRECIATION_AND_TAX_EXPENSE NUMBER(38,5),
+	BRANCH_DIRECT_PAT_AFTER_ADJ NUMBER(38,5),
+	
+	ALLOCATED_INCOME_FROM_HO NUMBER(38,5),
+	ALLOCATED_INCOME_FROM_BRANCH NUMBER(38,5),
+	ALLOCATED_INTEREST_INCOME_FROM_HO NUMBER(38,5),
+	ALLOCATED_INTEREST_INCOME_FROM_BRANCH NUMBER(38,5),
+	ALLOCATED_OTHER_INCOME_FROM_HO NUMBER(38,5),
+	ALLOCATED_OTHER_INCOME_FROM_BRANCH NUMBER(38,5),
+	ALLOCATED_EXPENDITURE_FROM_HO NUMBER(38,5),
+	ALLOCATED_EXPENDITURE_FROM_BRANCH NUMBER(38,5),
+	ALLOCATED_EMPLOYEE_BENEFIT_EXPENSE_FROM_HO NUMBER(38,5),
+	ALLOCATED_EMPLOYEE_BENEFIT_EXPENSE_FROM_BRANCH NUMBER(38,5),
+	ALLOCATED_OTHER_OPERATING_EXPENSES_FROM_HO NUMBER(38,5),
+	ALLOCATED_OTHER_OPERATING_EXPENSES_FROM_BRANCH NUMBER(38,5),
+	ALLOCATED_PROVISION_FOR_DELIQUENCIES_FROM_HO NUMBER(38,5),
+	ALLOCATED_PROVISION_FOR_DELIQUENCIES_FROM_BRANCH NUMBER(38,5),
+	ALLOCATED_PBT_FROM_HO NUMBER(38,5),
+	ALLOCATED_PBT_FROM_BRANCH NUMBER(38,5),
+	ALLOCATED_DEPRECIATION_AND_TAX_EXPENSE_FROM_HO NUMBER(38,5),
+	ALLOCATED_DEPRECIATION_AND_TAX_EXPENSE_FROM_BRANCH NUMBER(38,5),
+	ALLOCATED_PAT_FROM_HO NUMBER(38,5),
+	ALLOCATED_PAT_FROM_BRANCH NUMBER(38,5),
+	
+	BRANCH_TOTAL_INCOME_AFTER_ALLOCATION NUMBER(38,5),
+	BRANCH_TOTAL_INTEREST_INCOME_AFTER_ALLOCATION NUMBER(38,5),
+	BRANCH_TOTAL_OTHER_INCOME_AFTER_ALLOCATION NUMBER(38,5),
+	BRANCH_TOTAL_EXPENDITURE_AFTER_ALLOCATION NUMBER(38,5),
+	BRANCH_TOTAL_EMPLOYEE_BENEFIT_EXPENSE_AFTER_ALLOCATION NUMBER(38,5),
+	BRANCH_TOTAL_OTHER_OPERATING_EXPENSES_AFTER_ALLOCATION NUMBER(38,5),
+	BRANCH_TOTAL_PROVISION_FOR_DELIQUENCIES_AFTER_ALLOCATION NUMBER(38,5),
+	BRANCH_TOTAL_PBT_AFTER_ALLOCATION NUMBER(38,5),
+	BRANCH_TOTAL_DEPRECIATION_AND_TAX_EXPENSE_AFTER_ALLOCATION NUMBER(38,5),
+	BRANCH_TOTAL_PAT_AFTER_ALLOCATION NUMBER(38,5),
+	
+	HL_AUM NUMBER(38,5),
+	NHL_AUM NUMBER(38,5),
+	NET_AUM NUMBER(38,5),
+	ROA NUMBER(38,2),
+	NET_DISBURSAL_AMOUNT NUMBER(38,5),
+	DISBURSAL_YIELD NUMBER(38,2),
+	DISBURSAL_TARGET NUMBER(38,2),
+	NET_SANCTION_COUNT NUMBER(38,0),
+	NET_SANCTION_AMOUNT NUMBER(38,5),
+	NET_SUD_COUNT NUMBER(38,0),
+	NET_SUD_AMOUNT NUMBER(38,5),
+	NET_LOGIN_COUNT NUMBER(38,0),
+	NET_LOGIN_AMOUNT NUMBER(38,5),
+	NET_PROCESSING_FEE NUMBER(38,5),
+	NET_PDD_FEE NUMBER(38,5),
+	NET_ADMIN_FEE NUMBER(38,5),
+	NET_TOTAL_FEES_AMOUNT NUMBER(38,5),
+	NET_PROPERTY_INSURANCE_FEE NUMBER(38,5),
+	NET_LIFE_INSURANCE_FEE NUMBER(38,5),
+	NET_HEALTH_INSURANCE_FEE NUMBER(38,5),
+ 	SALES_RO_HEADCOUNT NUMBER(38,0),
+	SALES_RRO_HEADCOUNT NUMBER(38,0),
+	SALES_BH_HEADCOUNT NUMBER(38,0),
+	CREDIT_CO_HEADCOUNT NUMBER(38,0),
+	CREDIT_CM_HEADCOUNT NUMBER(38,0),
+	BT_IN_CASES NUMBER(38,0),
+	BT_IN_AMOUNT NUMBER(38,5),
+	BT_OUT_CASES NUMBER(38,0),
+	BT_OUT_AMOUNT NUMBER(38,5),
+	HL_BOUNCE_COUNT NUMBER(38,0),
+	NHL_BOUNCE_COUNT NUMBER(38,0),
+	HL_30PLUS_COUNT NUMBER(38,0),
+	NHL_30PLUS_COUNT NUMBER(38,0),
+	HL_60PLUS_COUNT NUMBER(38,0),
+	NHL_60PLUS_COUNT NUMBER(38,0),
+	HL_90PLUS_COUNT NUMBER(38,0),
+	NHL_90PLUS_COUNT NUMBER(38,0),
+	MART_PROCESSING_DATE DATE
+	);
+
+
+    -- STEP 2: INSERT DATA INTO BRANCH_MONTHLY_ACTIVITY_PREFINAL
+	CREATE OR REPLACE TEMPORARY TABLE DISHA_MART_ANALYTICS.FINANCE_MART.BRANCH_MONTHLY_ACTIVITY_PREFINAL
+	(
+	PCMCS_BRANCH_ID VARCHAR(20),
+	LMS_BRANCH_ID VARCHAR(20),
+	BRANCH_NAME VARCHAR(225),
+	BRANCH_OPENING_DATE DATE,
+	BRANCH_VINTAGE VARCHAR(225),
+	STATE_NAME VARCHAR(225),
+	MONTH_YEAR VARCHAR(10),
+	MONTH_END_DATE DATE,
+	
+	BRANCH_DIRECT_INCOME_AFTER_ADJ NUMBER(38,5),
+	BRANCH_DIRECT_INTEREST_INCOME_AFTER_ADJ NUMBER(38,5),
+	BRANCH_DIRECT_OTHER_INCOME_AFTER_ADJ NUMBER(38,5),
+	BRANCH_DIRECT_EXPENDITURE_AFTER_ADJ NUMBER(38,5),
+	BRANCH_DIRECT_EMPLOYEE_BENEFIT_EXPENSE_AFTER_ADJ NUMBER(38,5),
+	BRANCH_DIRECT_OTHER_OPERATING_EXPENSES_AFTER_ADJ NUMBER(38,5),
+	BRANCH_DIRECT_PROVISION_FOR_DELIQUENCIES_AFTER_ADJ NUMBER(38,5),
+	BRANCH_DIRECT_PBT_AFTER_ADJ NUMBER(38,5),
+	BRANCH_DIRECT_DEPRECIATION_AND_TAX_EXPENSE NUMBER(38,5),
+	BRANCH_DIRECT_PAT_AFTER_ADJ NUMBER(38,5),
+	
+	ALLOCATED_INCOME_FROM_HO NUMBER(38,5),
+	ALLOCATED_INCOME_FROM_BRANCH NUMBER(38,5),
+	ALLOCATED_INTEREST_INCOME_FROM_HO NUMBER(38,5),
+	ALLOCATED_INTEREST_INCOME_FROM_BRANCH NUMBER(38,5),
+	ALLOCATED_OTHER_INCOME_FROM_HO NUMBER(38,5),
+	ALLOCATED_OTHER_INCOME_FROM_BRANCH NUMBER(38,5),
+	ALLOCATED_EXPENDITURE_FROM_HO NUMBER(38,5),
+	ALLOCATED_EXPENDITURE_FROM_BRANCH NUMBER(38,5),
+	ALLOCATED_EMPLOYEE_BENEFIT_EXPENSE_FROM_HO NUMBER(38,5),
+	ALLOCATED_EMPLOYEE_BENEFIT_EXPENSE_FROM_BRANCH NUMBER(38,5),
+	ALLOCATED_OTHER_OPERATING_EXPENSES_FROM_HO NUMBER(38,5),
+	ALLOCATED_OTHER_OPERATING_EXPENSES_FROM_BRANCH NUMBER(38,5),
+	ALLOCATED_PROVISION_FOR_DELIQUENCIES_FROM_HO NUMBER(38,5),
+	ALLOCATED_PROVISION_FOR_DELIQUENCIES_FROM_BRANCH NUMBER(38,5),
+	ALLOCATED_PBT_FROM_HO NUMBER(38,5),
+	ALLOCATED_PBT_FROM_BRANCH NUMBER(38,5),
+	ALLOCATED_DEPRECIATION_AND_TAX_EXPENSE_FROM_HO NUMBER(38,5),
+	ALLOCATED_DEPRECIATION_AND_TAX_EXPENSE_FROM_BRANCH NUMBER(38,5),
+	ALLOCATED_PAT_FROM_HO NUMBER(38,5),
+	ALLOCATED_PAT_FROM_BRANCH NUMBER(38,5),
+	
+	BRANCH_TOTAL_INCOME_AFTER_ALLOCATION NUMBER(38,5),
+	BRANCH_TOTAL_INTEREST_INCOME_AFTER_ALLOCATION NUMBER(38,5),
+	BRANCH_TOTAL_OTHER_INCOME_AFTER_ALLOCATION NUMBER(38,5),
+	BRANCH_TOTAL_EXPENDITURE_AFTER_ALLOCATION NUMBER(38,5),
+	BRANCH_TOTAL_EMPLOYEE_BENEFIT_EXPENSE_AFTER_ALLOCATION NUMBER(38,5),
+	BRANCH_TOTAL_OTHER_OPERATING_EXPENSES_AFTER_ALLOCATION NUMBER(38,5),
+	BRANCH_TOTAL_PROVISION_FOR_DELIQUENCIES_AFTER_ALLOCATION NUMBER(38,5),
+	BRANCH_TOTAL_PBT_AFTER_ALLOCATION NUMBER(38,5),
+	BRANCH_TOTAL_DEPRECIATION_AND_TAX_EXPENSE_AFTER_ALLOCATION NUMBER(38,5),
+	BRANCH_TOTAL_PAT_AFTER_ALLOCATION NUMBER(38,5),
+	
+	HL_AUM NUMBER(38,5),
+	NHL_AUM NUMBER(38,5),
+	NET_AUM NUMBER(38,5),
+	ROA NUMBER(38,2),
+	NET_DISBURSAL_AMOUNT NUMBER(38,5),
+	DISBURSAL_YIELD NUMBER(38,2),
+	DISBURSAL_TARGET NUMBER(38,2),
+	NET_SANCTION_COUNT NUMBER(38,0),
+	NET_SANCTION_AMOUNT NUMBER(38,5),
+	NET_SUD_COUNT NUMBER(38,0),
+	NET_SUD_AMOUNT NUMBER(38,5),
+	NET_LOGIN_COUNT NUMBER(38,0),
+	NET_LOGIN_AMOUNT NUMBER(38,5),
+	NET_PROCESSING_FEE NUMBER(38,5),
+	NET_PDD_FEE NUMBER(38,5),
+	NET_ADMIN_FEE NUMBER(38,5),
+	NET_TOTAL_FEES_AMOUNT NUMBER(38,5),
+	NET_PROPERTY_INSURANCE_FEE NUMBER(38,5),
+	NET_LIFE_INSURANCE_FEE NUMBER(38,5),
+	NET_HEALTH_INSURANCE_FEE NUMBER(38,5),
+	SALES_RO_HEADCOUNT NUMBER(38,0),
+	SALES_RRO_HEADCOUNT NUMBER(38,0),
+	SALES_BH_HEADCOUNT NUMBER(38,0),
+	CREDIT_CO_HEADCOUNT NUMBER(38,0),
+	CREDIT_CM_HEADCOUNT NUMBER(38,0),
+	BT_IN_CASES NUMBER(38,0),
+	BT_IN_AMOUNT NUMBER(38,5),
+	BT_OUT_CASES NUMBER(38,0),
+	BT_OUT_AMOUNT NUMBER(38,5),
+	HL_BOUNCE_COUNT NUMBER(38,0),
+	NHL_BOUNCE_COUNT NUMBER(38,0),
+	HL_30PLUS_COUNT NUMBER(38,0),
+	NHL_30PLUS_COUNT NUMBER(38,0),
+	HL_60PLUS_COUNT NUMBER(38,0),
+	NHL_60PLUS_COUNT NUMBER(38,0),
+	HL_90PLUS_COUNT NUMBER(38,0),
+	NHL_90PLUS_COUNT NUMBER(38,0),
+    MART_PROCESSING_DATE DATE
+    ) 
+	AS
+	(
+    SELECT
+		BID.PCMCS_BRANCH_ID,
+		BID.LMS_BRANCH_ID,
+		BID.BRANCH_NAME,
+		BID.BRANCH_OPENING_DATE,
+		CONCAT(
+			FLOOR(TIMESTAMPDIFF(MONTH, BID.BRANCH_OPENING_DATE, BID.MONTH_END_DATE) / 12), '' Year, '',
+			MOD(TIMESTAMPDIFF(MONTH, BID.BRANCH_OPENING_DATE, BID.MONTH_END_DATE), 12), '' Months''
+		) AS BRANCH_VINTAGE,
+		BID.STATE_NAME,
+		BID.MONTH_YEAR,
+		BID.MONTH_END_DATE,
+		BID.BRANCH_DIRECT_INCOME_AFTER_ADJ,
+		BID.BRANCH_DIRECT_INTEREST_INCOME_AFTER_ADJ,
+		BID.BRANCH_DIRECT_OTHER_INCOME_AFTER_ADJ,
+		BID.BRANCH_DIRECT_EXPENDITURE_AFTER_ADJ,
+		BID.BRANCH_DIRECT_EMPLOYEE_BENEFIT_EXPENSE_AFTER_ADJ,
+		BID.BRANCH_DIRECT_OTHER_OPERATING_EXPENSES_AFTER_ADJ,
+		BID.BRANCH_DIRECT_PROVISION_FOR_DELIQUENCIES_AFTER_ADJ,
+		BID.BRANCH_DIRECT_PBT_AFTER_ADJ,
+		BID.BRANCH_DIRECT_DEPRECIATION_AND_TAX_EXPENSE,
+		BID.BRANCH_DIRECT_PAT_AFTER_ADJ,
+		
+		BID.ALLOCATED_INCOME_FROM_HO,
+		BID.ALLOCATED_INCOME_FROM_BRANCH,
+		BID.ALLOCATED_INTEREST_INCOME_FROM_HO,
+		BID.ALLOCATED_INTEREST_INCOME_FROM_BRANCH,
+		BID.ALLOCATED_OTHER_INCOME_FROM_HO,
+		BID.ALLOCATED_OTHER_INCOME_FROM_BRANCH,
+		BID.ALLOCATED_EXPENDITURE_FROM_HO,
+		BID.ALLOCATED_EXPENDITURE_FROM_BRANCH,
+		BID.ALLOCATED_EMPLOYEE_BENEFIT_EXPENSE_FROM_HO,
+		BID.ALLOCATED_EMPLOYEE_BENEFIT_EXPENSE_FROM_BRANCH,
+		BID.ALLOCATED_OTHER_OPERATING_EXPENSES_FROM_HO,
+		BID.ALLOCATED_OTHER_OPERATING_EXPENSES_FROM_BRANCH,
+		BID.ALLOCATED_PROVISION_FOR_DELIQUENCIES_FROM_HO,
+		BID.ALLOCATED_PROVISION_FOR_DELIQUENCIES_FROM_BRANCH,
+		BID.ALLOCATED_PBT_FROM_HO,
+		BID.ALLOCATED_PBT_FROM_BRANCH,
+		BID.ALLOCATED_DEPRECIATION_AND_TAX_EXPENSE_FROM_HO,
+		BID.ALLOCATED_DEPRECIATION_AND_TAX_EXPENSE_FROM_BRANCH,
+		BID.ALLOCATED_PAT_FROM_HO,
+		BID.ALLOCATED_PAT_FROM_BRANCH,
+		
+		BID.BRANCH_TOTAL_INCOME_AFTER_ALLOCATION,
+		BID.BRANCH_TOTAL_INTEREST_INCOME_AFTER_ALLOCATION,
+		BID.BRANCH_TOTAL_OTHER_INCOME_AFTER_ALLOCATION,
+		BID.BRANCH_TOTAL_EXPENDITURE_AFTER_ALLOCATION,
+		BID.BRANCH_TOTAL_EMPLOYEE_BENEFIT_EXPENSE_AFTER_ALLOCATION,
+		BID.BRANCH_TOTAL_OTHER_OPERATING_EXPENSES_AFTER_ALLOCATION,
+		BID.BRANCH_TOTAL_PROVISION_FOR_DELIQUENCIES_AFTER_ALLOCATION,
+		BID.BRANCH_TOTAL_PBT_AFTER_ALLOCATION,
+		BID.BRANCH_TOTAL_DEPRECIATION_AND_TAX_EXPENSE_AFTER_ALLOCATION,
+		BID.BRANCH_TOTAL_PAT_AFTER_ALLOCATION,
+		
+        COALESCE(RLM.HL_AUM,0) AS HL_AUM,
+        COALESCE(RLM.NHL_AUM,0) AS NHL_AUM,
+		COALESCE(RLM.NET_AUM,0) AS NET_AUM,
+		COALESCE(BID.BRANCH_TOTAL_PAT_AFTER_ALLOCATION/NULLIF(RLM.NET_AUM,0),0) AS ROA,
+		COALESCE(LAM_DISB.NET_DISBURSAL_AMOUNT,0) AS NET_DISBURSAL_AMOUNT,
+		COALESCE(DISB_YLD.DISBURSAL_YIELD,0) AS DISBURSAL_YIELD,
+		DISB_TGT.DISBURSAL_TARGET,
+		COALESCE(LAM_SANC.NET_SANCTION_COUNT,0) AS NET_SANCTION_COUNT,
+		COALESCE(LAM_SANC.NET_SANCTION_AMOUNT,0) AS NET_SANCTION_AMOUNT,
+		COALESCE(LAM_SANC.NET_SUD_COUNT,0) AS NET_SUD_COUNT,
+		COALESCE(LAM_SANC.NET_SUD_AMOUNT,0) AS NET_SUD_AMOUNT,
+		COALESCE(LAM_DEAL.NET_LOGIN_COUNT,0) AS NET_LOGIN_COUNT,
+		COALESCE(LAM_DEAL.NET_LOGIN_AMOUNT,0) AS NET_LOGIN_AMOUNT,
+		COALESCE(LACCM_FEE.NET_PROCESSING_FEE,0) AS NET_PROCESSING_FEE,
+		COALESCE(LACCM_FEE.NET_PDD_FEE,0) AS NET_PDD_FEE,
+		COALESCE(LACCM_FEE.NET_ADMIN_FEE,0) AS NET_ADMIN_FEE,
+		COALESCE(LACCM_FEE.NET_TOTAL_FEES_AMOUNT,0) AS NET_TOTAL_FEES_AMOUNT,
+		COALESCE(LACCM_FEE.NET_PROPERTY_INSURANCE_FEE,0) AS NET_PROPERTY_INSURANCE_FEE,
+		COALESCE(LACCM_FEE.NET_LIFE_INSURANCE_FEE,0) AS NET_LIFE_INSURANCE_FEE,
+		COALESCE(LACCM_FEE.NET_HEALTH_INSURANCE_FEE,0) AS NET_HEALTH_INSURANCE_FEE,
+		EMP_CNT.SALES_RO_HEADCOUNT,
+		EMP_CNT.SALES_RRO_HEADCOUNT,
+		EMP_CNT.SALES_BH_HEADCOUNT,
+		EMP_CNT.CREDIT_CO_HEADCOUNT,
+		EMP_CNT.CREDIT_CM_HEADCOUNT,
+        NULL AS BT_IN_CASES,
+	    NULL AS BT_IN_AMOUNT,
+	    NULL AS BT_OUT_CASES,
+	    NULL AS BT_OUT_AMOUNT,
+	    NULL AS HL_BOUNCE_COUNT,
+	    NULL AS NHL_BOUNCE_COUNT,
+	    NULL AS HL_30PLUS_COUNT,
+	    NULL AS NHL_30PLUS_COUNT,
+	    NULL AS HL_60PLUS_COUNT,
+	    NULL AS NHL_60PLUS_COUNT,
+	    NULL AS HL_90PLUS_COUNT,
+	    NULL AS NHL_90PLUS_COUNT,
+        CURRENT_DATE() AS MART_PROCESSING_DATE
+		FROM
+			(   
+			SELECT
+				BPD.BRANCH AS PCMCS_BRANCH_ID,
+				BDSFDC.BRANCH_LMS_CODE AS LMS_BRANCH_ID,
+				BDSFDC.BRANCH_NAME,
+				BDSFDC.BRANCH_STATE_NAME AS STATE_NAME,
+				BDSFDC.DATE_OF_OPENING AS BRANCH_OPENING_DATE,
+				--BPD.PERIOD || SUBSTRING(BPD.YEAR, 3, 2) AS MONTH_YEAR,
+				BPD.PERIOD || 
+				CASE WHEN UPPER(BPD.PERIOD) IN (''JAN'', ''FEB'', ''MAR'') 
+					THEN LPAD(CAST(SUBSTRING(BPD.YEAR, 3, 2) AS INT) + 1, 2, ''0'')
+				ELSE 
+					SUBSTRING(BPD.YEAR, 3, 2)
+				END AS MONTH_YEAR,
+				LAST_DAY(TO_DATE(CONCAT(''01-'', MONTH_YEAR), ''DD-MonYY'')) AS MONTH_END_DATE,
+				
+				-----------/* DIRECT INCOME/EXPENSE */------------
+				
+				
+				SUM(CASE 
+						WHEN UPPER(TRIM(ACCOUNT)) = ''AC_40000000'' 
+							AND UPPER(TRIM(COST_CENTER)) NOT IN (''TOTAL_COST CENTER'', ''ALL_COST CENTER'')
+							AND UPPER(TRIM(RULE)) = ''PCM_CALCULATION RULES''  
+							AND UPPER(TRIM(VERTICAL)) NOT IN ( ''TOTAL_VERTICAL'' , ''ALL_VERTICAL'')
+							AND UPPER(TRIM(PRODUCT)) NOT IN ( ''TOTAL_PRODUCT'', ''ALL_PRODUCT'') 
+							AND UPPER(TRIM(BALANCE)) = ''PCM_INPUT''
+						THEN (AMOUNT) 
+						ELSE 0 
+					END) AS BRANCH_DIRECT_INCOME_AFTER_ADJ,
+					
+				SUM(CASE 
+						WHEN UPPER(TRIM(ACCOUNT)) = ''AC_41010000'' 
+							AND UPPER(TRIM(COST_CENTER)) NOT IN (''TOTAL_COST CENTER'', ''ALL_COST CENTER'')
+							AND UPPER(TRIM(RULE)) = ''PCM_CALCULATION RULES''  
+							AND UPPER(TRIM(VERTICAL)) NOT IN ( ''TOTAL_VERTICAL'' , ''ALL_VERTICAL'')
+							AND UPPER(TRIM(PRODUCT)) NOT IN ( ''TOTAL_PRODUCT'', ''ALL_PRODUCT'') 
+							AND UPPER(TRIM(BALANCE)) = ''PCM_INPUT''
+						THEN (AMOUNT) 
+						ELSE 0 
+					END) AS BRANCH_DIRECT_INTEREST_INCOME_AFTER_ADJ,
+					
+				SUM(CASE 
+						WHEN UPPER(TRIM(ACCOUNT)) IN (''AC_41030000'', ''AC_41040000'', ''AC_42000000'')
+							AND UPPER(TRIM(COST_CENTER)) NOT IN (''TOTAL_COST CENTER'', ''ALL_COST CENTER'')
+							AND UPPER(TRIM(RULE)) = ''PCM_CALCULATION RULES''  
+							AND UPPER(TRIM(VERTICAL)) NOT IN ( ''TOTAL_VERTICAL'' , ''ALL_VERTICAL'')
+							AND UPPER(TRIM(PRODUCT)) NOT IN ( ''TOTAL_PRODUCT'', ''ALL_PRODUCT'') 
+							AND UPPER(TRIM(BALANCE)) = ''PCM_INPUT''
+						THEN (AMOUNT) 
+						ELSE 0 
+					END) AS BRANCH_DIRECT_OTHER_INCOME_AFTER_ADJ,
+				
+				SUM(CASE 
+						WHEN UPPER(TRIM(ACCOUNT)) = ''AC_50000000''
+							AND UPPER(TRIM(COST_CENTER)) NOT IN (''TOTAL_COST CENTER'', ''ALL_COST CENTER'')
+							AND UPPER(TRIM(RULE)) = ''PCM_CALCULATION RULES''  
+							AND UPPER(TRIM(VERTICAL)) NOT IN ( ''TOTAL_VERTICAL'' , ''ALL_VERTICAL'')
+							AND UPPER(TRIM(PRODUCT)) NOT IN ( ''TOTAL_PRODUCT'', ''ALL_PRODUCT'') 
+							AND UPPER(TRIM(BALANCE)) = ''PCM_INPUT''
+						THEN (AMOUNT) 
+						ELSE 0 
+					END) -
+                SUM(CASE 
+                        WHEN UPPER(TRIM(ACCOUNT)) IN (''AC_51070000'', ''AC_51090000'')
+                            AND UPPER(TRIM(COST_CENTER)) NOT IN (''TOTAL_COST CENTER'', ''ALL_COST CENTER'')
+                            AND UPPER(TRIM(RULE)) = ''PCM_CALCULATION RULES''  
+                            AND UPPER(TRIM(VERTICAL)) NOT IN ( ''TOTAL_VERTICAL'' , ''ALL_VERTICAL'')
+                            AND UPPER(TRIM(PRODUCT)) NOT IN ( ''TOTAL_PRODUCT'', ''ALL_PRODUCT'') 
+                            AND UPPER(TRIM(BALANCE)) = ''PCM_INPUT''
+                        THEN (AMOUNT)
+                        ELSE 0 
+                    END) AS BRANCH_DIRECT_EXPENDITURE_AFTER_ADJ,
+					
+				SUM(CASE 
+						WHEN UPPER(TRIM(ACCOUNT)) = ''AC_51060000''
+							AND UPPER(TRIM(COST_CENTER)) NOT IN (''TOTAL_COST CENTER'', ''ALL_COST CENTER'')
+							AND UPPER(TRIM(RULE)) = ''PCM_CALCULATION RULES''  
+							AND UPPER(TRIM(VERTICAL)) NOT IN ( ''TOTAL_VERTICAL'' , ''ALL_VERTICAL'')
+							AND UPPER(TRIM(PRODUCT)) NOT IN ( ''TOTAL_PRODUCT'', ''ALL_PRODUCT'') 
+							AND UPPER(TRIM(BALANCE)) = ''PCM_INPUT''
+						THEN (AMOUNT) 
+						ELSE 0 
+					END) AS BRANCH_DIRECT_EMPLOYEE_BENEFIT_EXPENSE_AFTER_ADJ,
+					
+				SUM(CASE 
+						WHEN UPPER(TRIM(ACCOUNT)) IN (''AC_51010000'', ''AC_51020000'', ''AC_51080000'')
+							AND UPPER(TRIM(COST_CENTER)) NOT IN (''TOTAL_COST CENTER'', ''ALL_COST CENTER'')
+							AND UPPER(TRIM(RULE)) = ''PCM_CALCULATION RULES''  
+							AND UPPER(TRIM(VERTICAL)) NOT IN ( ''TOTAL_VERTICAL'' , ''ALL_VERTICAL'')
+							AND UPPER(TRIM(PRODUCT)) NOT IN ( ''TOTAL_PRODUCT'', ''ALL_PRODUCT'') 
+							AND UPPER(TRIM(BALANCE)) = ''PCM_INPUT''
+						THEN (AMOUNT) 
+						ELSE 0 
+					END) AS BRANCH_DIRECT_OTHER_OPERATING_EXPENSES_AFTER_ADJ,
+					
+				SUM(CASE 
+						WHEN UPPER(TRIM(ACCOUNT)) = ''AC_51050000''
+							AND UPPER(TRIM(COST_CENTER)) NOT IN (''TOTAL_COST CENTER'', ''ALL_COST CENTER'')
+							AND UPPER(TRIM(RULE)) = ''PCM_CALCULATION RULES''  
+							AND UPPER(TRIM(VERTICAL)) NOT IN ( ''TOTAL_VERTICAL'' , ''ALL_VERTICAL'')
+							AND UPPER(TRIM(PRODUCT)) NOT IN ( ''TOTAL_PRODUCT'', ''ALL_PRODUCT'') 
+							AND UPPER(TRIM(BALANCE)) = ''PCM_INPUT''
+						THEN (AMOUNT) 
+						ELSE 0 
+					END) AS BRANCH_DIRECT_PROVISION_FOR_DELIQUENCIES_AFTER_ADJ,
+					
+				(BRANCH_DIRECT_INCOME_AFTER_ADJ + BRANCH_DIRECT_EXPENDITURE_AFTER_ADJ) AS BRANCH_DIRECT_PBT_AFTER_ADJ,
+					
+					SUM(CASE 
+                        WHEN UPPER(TRIM(ACCOUNT)) IN (''AC_51070000'', ''AC_51090000'')
+                            AND UPPER(TRIM(COST_CENTER)) NOT IN (''TOTAL_COST CENTER'', ''ALL_COST CENTER'')
+                            AND UPPER(TRIM(RULE)) = ''PCM_CALCULATION RULES''  
+                            AND UPPER(TRIM(VERTICAL)) NOT IN ( ''TOTAL_VERTICAL'' , ''ALL_VERTICAL'')
+                            AND UPPER(TRIM(PRODUCT)) NOT IN ( ''TOTAL_PRODUCT'', ''ALL_PRODUCT'') 
+                            AND UPPER(TRIM(BALANCE)) = ''PCM_INPUT'' 
+                        THEN (AMOUNT)
+                        ELSE 0 
+                    END) AS BRANCH_DIRECT_DEPRECIATION_AND_TAX_EXPENSE,
+					
+					SUM(CASE 
+						WHEN UPPER(TRIM(ACCOUNT)) = ''AC_PROFITLOSS'' 
+							AND UPPER(TRIM(COST_CENTER)) NOT IN (''TOTAL_COST CENTER'', ''ALL_COST CENTER'')
+							AND UPPER(TRIM(RULE)) = ''PCM_CALCULATION RULES''  
+							AND UPPER(TRIM(VERTICAL)) NOT IN ( ''TOTAL_VERTICAL'' , ''ALL_VERTICAL'')
+							AND UPPER(TRIM(PRODUCT)) NOT IN ( ''TOTAL_PRODUCT'', ''ALL_PRODUCT'') 
+							AND UPPER(TRIM(BALANCE)) = ''PCM_INPUT''
+						THEN (AMOUNT) 
+						ELSE 0 
+				END) AS BRANCH_DIRECT_PAT_AFTER_ADJ,
+				
+				-----------/* ALLOCATED FROM HO, FROM BRANCH */------------
+				
+				SUM(CASE 
+						WHEN UPPER(TRIM(ACCOUNT)) = ''AC_40000000'' 
+							AND UPPER(TRIM(COST_CENTER)) NOT IN (''TOTAL_COST CENTER'', ''ALL_COST CENTER'')
+							AND TRIM(RULE) IN (''S1_Interest_Cost'', ''S2_Interest_Cost'', ''S3_Interest_Cost'', ''S4_Interest_Cost'', ''S1_Periodic_Disbursement'', ''S1_90_Plus_AUM'', ''S2_90_Plus_AUM'', ''S3_90_Plus_AUM'', ''S4_90_Plus_AUM'', ''S1_90_Plus_AUM_HL'', ''S2_90_Plus_AUM_HL'', ''S3_90_Plus_AUM_HL'', ''S4_90_Plus_AUM_HL'', ''S1_90_Plus_AUM_NHL'', ''S2_90_Plus_AUM_NHL'', ''S3_90_Plus_AUM_NHL'', ''S4_90_Plus_AUM_NHL'', ''S1_Disbursements'', ''S2_Disbursements'', ''S3_Disbursements'', ''S4_Disbursements'', ''S1_AUM'', ''S2_AUM'', ''S3_AUM'', ''S4_AUM'', ''S1_AUM_HL'', ''S2_AUM_HL'', ''S3_AUM_HL'', ''S4_AUM_HL'', ''S1_AUM_NHL'', ''S2_AUM_NHL'', ''S3_AUM_NHL'', ''S4_AUM_NHL'', ''S1_PBT_of_Branch'', ''S2_PBT_of_Branch'', ''S3_PBT_of_Branch'', ''S4_PBT_of_Branch'', ''S2_Periodic_Disbursement'', ''S3_Periodic_Disbursement'', ''S4_Periodic_Disbursement'', ''S1_Headcount'', ''S2_Headcount'', ''S3_Headcount'', ''S4_Headcount'', ''S1_New_Business_YTD'', ''S2_New_Business_YTD'', ''S3_New_Business_YTD'', ''S4_New_Business_YTD'', ''S1_No_of_1_Plus_Cases'', ''S2_No_of_1_Plus_Cases'', ''S3_No_of_1_Plus_Cases'', ''S4_No_of_1_Plus_Cases'', ''S1_No_of_Cases_Disbursed'', ''S2_No_of_Cases_Disbursed'', ''S3_No_of_Cases_Disbursed'', ''S4_No_of_Cases_Disbursed'', ''S1_No_of_Live_Cases'', ''S2_No_of_Live_Cases'', ''S3_No_of_Live_Cases'', ''S4_No_of_Live_Cases'', ''S1_Assigned_Cases_AUM'', ''S2_Assigned_Cases_AUM'', ''S3_Assigned_Cases_AUM'', ''S4_Assigned_Cases_AUM'', ''S1_Interest_Rate'', ''S2_Interest_Rate'', ''S3_Interest_Rate'', ''S4_Interest_Rate'', ''S2_and_S3_No_of_Headcount_New_Business_YTD'', ''S1_No_of_Headcount'', ''S4_No_of_Headcount'', ''Copy_to_New_Business_YTD_from_Headcount_Net_Balance_HO'', /*Allocation In */
+							''S1_Interest_Cost'', ''S2_Interest_Cost'', ''S3_Interest_Cost'', ''S4_Interest_Cost'', ''S1_Periodic_Disbursement'', ''S1_90_Plus_AUM'', ''S2_90_Plus_AUM'', ''S3_90_Plus_AUM'', ''S4_90_Plus_AUM'', ''S1_90_Plus_AUM_HL'', ''S2_90_Plus_AUM_HL'', ''S3_90_Plus_AUM_HL'', ''S4_90_Plus_AUM_HL'', ''S1_90_Plus_AUM_NHL'', ''S2_90_Plus_AUM_NHL'', ''S3_90_Plus_AUM_NHL'', ''S4_90_Plus_AUM_NHL'', ''S1_Disbursements'', ''S2_Disbursements'', ''S3_Disbursements'', ''S4_Disbursements'', ''S1_AUM'', ''S2_AUM'', ''S3_AUM'', ''S4_AUM'', ''S1_AUM_HL'', ''S2_AUM_HL'', ''S3_AUM_HL'', ''S4_AUM_HL'', ''S1_AUM_NHL'', ''S2_AUM_NHL'', ''S3_AUM_NHL'', ''S4_AUM_NHL'', ''S1_PBT_of_Branch'', ''S2_PBT_of_Branch'', ''S3_PBT_of_Branch'', ''S4_PBT_of_Branch'', ''S2_Periodic_Disbursement'', ''S3_Periodic_Disbursement'', ''S4_Periodic_Disbursement'', ''S1_Headcount'', ''S2_Headcount'', ''S3_Headcount'', ''S4_Headcount'', ''S1_New_Business_YTD'', ''S2_New_Business_YTD'', ''S3_New_Business_YTD'', ''S4_New_Business_YTD'', ''S1_No_of_1_Plus_Cases'', ''S2_No_of_1_Plus_Cases'', ''S3_No_of_1_Plus_Cases'', ''S4_No_of_1_Plus_Cases'', ''S1_No_of_Cases_Disbursed'', ''S2_No_of_Cases_Disbursed'', ''S3_No_of_Cases_Disbursed'', ''S4_No_of_Cases_Disbursed'', ''S1_No_of_Live_Cases'', ''S2_No_of_Live_Cases'', ''S3_No_of_Live_Cases'', ''S4_No_of_Live_Cases'', ''S1_Assigned_Cases_AUM'', ''S2_Assigned_Cases_AUM'', ''S3_Assigned_Cases_AUM'', ''S4_Assigned_Cases_AUM'', ''S1_Interest_Rate'', ''S2_Interest_Rate'', ''S3_Interest_Rate'', ''S4_Interest_Rate'', ''S1_No_of_Headcount'', ''S4_No_of_Headcount'', ''S2_No_of_Headcount'', ''S3_No_of_Headcount'') /*Allocation Out */
+							AND UPPER(TRIM(VERTICAL)) NOT IN ( ''TOTAL_VERTICAL'' , ''ALL_VERTICAL'') 
+							AND UPPER(TRIM(PRODUCT)) NOT IN ( ''TOTAL_PRODUCT'', ''ALL_PRODUCT'') 
+							AND UPPER(TRIM(BALANCE)) IN (''PCM_ALLOCATION IN'', ''PCM_ALLOCATION OUT'')
+						THEN (AMOUNT) 
+						ELSE 0 
+					END) AS ALLOCATED_INCOME_FROM_HO,
+					
+				SUM(CASE 
+						WHEN UPPER(TRIM(ACCOUNT)) = ''AC_40000000''
+							AND TRIM(RULE) IN (''S1_and_S2_SH_and_Above_No_of_Headcount_New_Business_YTD'', ''S1_09_Uttar_Pradesh'', ''S2_09_Uttar_Pradesh'', ''S1_SH_and_Above'', ''S2_SH_and_Above'', ''S3_SH_and_Above'', ''S4_SH_and_Above'', ''S2_and_S3_No_of_Headcount_New_Business_YTD_PE'',''Copy_to_New_Business_YTD_from_Headcount_Net_Balance_SH_and_Above'', /* Allocation In */ ''S1_09_Uttar_Pradesh'', ''S2_09_Uttar_Pradesh'', ''S1_SH_and_Above'', ''S2_SH_and_Above'', ''S3_SH_and_Above'', ''S4_SH_and_Above'', ''S1_SH_and_Above_No_of_Headcount'', ''S2_SH_and_Above_No_of_Headcount'') /* Allocation Out */
+							AND UPPER(TRIM(COST_CENTER)) NOT IN (''TOTAL_COST CENTER'', ''ALL_COST CENTER'') 
+							AND UPPER(TRIM(VERTICAL)) NOT IN ( ''TOTAL_VERTICAL'' , ''ALL_VERTICAL'') 
+							AND UPPER(TRIM(PRODUCT)) NOT IN ( ''TOTAL_PRODUCT'', ''ALL_PRODUCT'') 
+							AND UPPER(TRIM(BALANCE)) IN (''PCM_ALLOCATION IN'', ''PCM_ALLOCATION OUT'')
+						THEN (AMOUNT) 
+						ELSE 0 
+					END) AS ALLOCATED_INCOME_FROM_BRANCH,
+					
+				SUM(CASE 
+						WHEN UPPER(TRIM(ACCOUNT)) = ''AC_41010000'' 
+							AND UPPER(TRIM(COST_CENTER)) NOT IN (''TOTAL_COST CENTER'', ''ALL_COST CENTER'')
+							AND TRIM(RULE) IN (''S1_Interest_Cost'', ''S2_Interest_Cost'', ''S3_Interest_Cost'', ''S4_Interest_Cost'', ''S1_Periodic_Disbursement'', ''S1_90_Plus_AUM'', ''S2_90_Plus_AUM'', ''S3_90_Plus_AUM'', ''S4_90_Plus_AUM'', ''S1_90_Plus_AUM_HL'', ''S2_90_Plus_AUM_HL'', ''S3_90_Plus_AUM_HL'', ''S4_90_Plus_AUM_HL'', ''S1_90_Plus_AUM_NHL'', ''S2_90_Plus_AUM_NHL'', ''S3_90_Plus_AUM_NHL'', ''S4_90_Plus_AUM_NHL'', ''S1_Disbursements'', ''S2_Disbursements'', ''S3_Disbursements'', ''S4_Disbursements'', ''S1_AUM'', ''S2_AUM'', ''S3_AUM'', ''S4_AUM'', ''S1_AUM_HL'', ''S2_AUM_HL'', ''S3_AUM_HL'', ''S4_AUM_HL'', ''S1_AUM_NHL'', ''S2_AUM_NHL'', ''S3_AUM_NHL'', ''S4_AUM_NHL'', ''S1_PBT_of_Branch'', ''S2_PBT_of_Branch'', ''S3_PBT_of_Branch'', ''S4_PBT_of_Branch'', ''S2_Periodic_Disbursement'', ''S3_Periodic_Disbursement'', ''S4_Periodic_Disbursement'', ''S1_Headcount'', ''S2_Headcount'', ''S3_Headcount'', ''S4_Headcount'', ''S1_New_Business_YTD'', ''S2_New_Business_YTD'', ''S3_New_Business_YTD'', ''S4_New_Business_YTD'', ''S1_No_of_1_Plus_Cases'', ''S2_No_of_1_Plus_Cases'', ''S3_No_of_1_Plus_Cases'', ''S4_No_of_1_Plus_Cases'', ''S1_No_of_Cases_Disbursed'', ''S2_No_of_Cases_Disbursed'', ''S3_No_of_Cases_Disbursed'', ''S4_No_of_Cases_Disbursed'', ''S1_No_of_Live_Cases'', ''S2_No_of_Live_Cases'', ''S3_No_of_Live_Cases'', ''S4_No_of_Live_Cases'', ''S1_Assigned_Cases_AUM'', ''S2_Assigned_Cases_AUM'', ''S3_Assigned_Cases_AUM'', ''S4_Assigned_Cases_AUM'', ''S1_Interest_Rate'', ''S2_Interest_Rate'', ''S3_Interest_Rate'', ''S4_Interest_Rate'', ''S2_and_S3_No_of_Headcount_New_Business_YTD'', ''S1_No_of_Headcount'', ''S4_No_of_Headcount'', ''Copy_to_New_Business_YTD_from_Headcount_Net_Balance_HO'', /*Allocation In */
+							''S1_Interest_Cost'', ''S2_Interest_Cost'', ''S3_Interest_Cost'', ''S4_Interest_Cost'', ''S1_Periodic_Disbursement'', ''S1_90_Plus_AUM'', ''S2_90_Plus_AUM'', ''S3_90_Plus_AUM'', ''S4_90_Plus_AUM'', ''S1_90_Plus_AUM_HL'', ''S2_90_Plus_AUM_HL'', ''S3_90_Plus_AUM_HL'', ''S4_90_Plus_AUM_HL'', ''S1_90_Plus_AUM_NHL'', ''S2_90_Plus_AUM_NHL'', ''S3_90_Plus_AUM_NHL'', ''S4_90_Plus_AUM_NHL'', ''S1_Disbursements'', ''S2_Disbursements'', ''S3_Disbursements'', ''S4_Disbursements'', ''S1_AUM'', ''S2_AUM'', ''S3_AUM'', ''S4_AUM'', ''S1_AUM_HL'', ''S2_AUM_HL'', ''S3_AUM_HL'', ''S4_AUM_HL'', ''S1_AUM_NHL'', ''S2_AUM_NHL'', ''S3_AUM_NHL'', ''S4_AUM_NHL'', ''S1_PBT_of_Branch'', ''S2_PBT_of_Branch'', ''S3_PBT_of_Branch'', ''S4_PBT_of_Branch'', ''S2_Periodic_Disbursement'', ''S3_Periodic_Disbursement'', ''S4_Periodic_Disbursement'', ''S1_Headcount'', ''S2_Headcount'', ''S3_Headcount'', ''S4_Headcount'', ''S1_New_Business_YTD'', ''S2_New_Business_YTD'', ''S3_New_Business_YTD'', ''S4_New_Business_YTD'', ''S1_No_of_1_Plus_Cases'', ''S2_No_of_1_Plus_Cases'', ''S3_No_of_1_Plus_Cases'', ''S4_No_of_1_Plus_Cases'', ''S1_No_of_Cases_Disbursed'', ''S2_No_of_Cases_Disbursed'', ''S3_No_of_Cases_Disbursed'', ''S4_No_of_Cases_Disbursed'', ''S1_No_of_Live_Cases'', ''S2_No_of_Live_Cases'', ''S3_No_of_Live_Cases'', ''S4_No_of_Live_Cases'', ''S1_Assigned_Cases_AUM'', ''S2_Assigned_Cases_AUM'', ''S3_Assigned_Cases_AUM'', ''S4_Assigned_Cases_AUM'', ''S1_Interest_Rate'', ''S2_Interest_Rate'', ''S3_Interest_Rate'', ''S4_Interest_Rate'', ''S1_No_of_Headcount'', ''S4_No_of_Headcount'', ''S2_No_of_Headcount'', ''S3_No_of_Headcount'') /*Allocation Out */
+							AND UPPER(TRIM(VERTICAL)) NOT IN ( ''TOTAL_VERTICAL'' , ''ALL_VERTICAL'') 
+							AND UPPER(TRIM(PRODUCT)) NOT IN ( ''TOTAL_PRODUCT'', ''ALL_PRODUCT'') 
+							AND UPPER(TRIM(BALANCE)) IN (''PCM_ALLOCATION IN'', ''PCM_ALLOCATION OUT'')
+						THEN (AMOUNT) 
+						ELSE 0 
+					END) AS ALLOCATED_INTEREST_INCOME_FROM_HO,
+					
+				SUM(CASE 
+						WHEN UPPER(TRIM(ACCOUNT)) = ''AC_41010000'' 
+							AND UPPER(TRIM(COST_CENTER)) NOT IN (''TOTAL_COST CENTER'', ''ALL_COST CENTER'')
+							AND TRIM(RULE) IN (''S1_and_S2_SH_and_Above_No_of_Headcount_New_Business_YTD'', ''S1_09_Uttar_Pradesh'', ''S2_09_Uttar_Pradesh'', ''S1_SH_and_Above'', ''S2_SH_and_Above'', ''S3_SH_and_Above'', ''S4_SH_and_Above'', ''S2_and_S3_No_of_Headcount_New_Business_YTD_PE'',''Copy_to_New_Business_YTD_from_Headcount_Net_Balance_SH_and_Above'', /* Allocation In */ ''S1_09_Uttar_Pradesh'', ''S2_09_Uttar_Pradesh'', ''S1_SH_and_Above'', ''S2_SH_and_Above'', ''S3_SH_and_Above'', ''S4_SH_and_Above'', ''S1_SH_and_Above_No_of_Headcount'', ''S2_SH_and_Above_No_of_Headcount'') /* Allocation Out */
+							AND UPPER(TRIM(VERTICAL)) NOT IN ( ''TOTAL_VERTICAL'' , ''ALL_VERTICAL'') 
+							AND UPPER(TRIM(PRODUCT)) NOT IN ( ''TOTAL_PRODUCT'', ''ALL_PRODUCT'') 
+							AND UPPER(TRIM(BALANCE)) IN (''PCM_ALLOCATION IN'', ''PCM_ALLOCATION OUT'')
+						THEN (AMOUNT) 
+						ELSE 0 
+					END) AS ALLOCATED_INTEREST_INCOME_FROM_BRANCH,
+					
+				SUM(CASE 
+						WHEN UPPER(TRIM(ACCOUNT)) IN (''AC_41030000'', ''AC_41040000'', ''AC_42000000'')
+							AND TRIM(RULE) IN (''S1_Interest_Cost'', ''S2_Interest_Cost'', ''S3_Interest_Cost'', ''S4_Interest_Cost'', ''S1_Periodic_Disbursement'', ''S1_90_Plus_AUM'', ''S2_90_Plus_AUM'', ''S3_90_Plus_AUM'', ''S4_90_Plus_AUM'', ''S1_90_Plus_AUM_HL'', ''S2_90_Plus_AUM_HL'', ''S3_90_Plus_AUM_HL'', ''S4_90_Plus_AUM_HL'', ''S1_90_Plus_AUM_NHL'', ''S2_90_Plus_AUM_NHL'', ''S3_90_Plus_AUM_NHL'', ''S4_90_Plus_AUM_NHL'', ''S1_Disbursements'', ''S2_Disbursements'', ''S3_Disbursements'', ''S4_Disbursements'', ''S1_AUM'', ''S2_AUM'', ''S3_AUM'', ''S4_AUM'', ''S1_AUM_HL'', ''S2_AUM_HL'', ''S3_AUM_HL'', ''S4_AUM_HL'', ''S1_AUM_NHL'', ''S2_AUM_NHL'', ''S3_AUM_NHL'', ''S4_AUM_NHL'', ''S1_PBT_of_Branch'', ''S2_PBT_of_Branch'', ''S3_PBT_of_Branch'', ''S4_PBT_of_Branch'', ''S2_Periodic_Disbursement'', ''S3_Periodic_Disbursement'', ''S4_Periodic_Disbursement'', ''S1_Headcount'', ''S2_Headcount'', ''S3_Headcount'', ''S4_Headcount'', ''S1_New_Business_YTD'', ''S2_New_Business_YTD'', ''S3_New_Business_YTD'', ''S4_New_Business_YTD'', ''S1_No_of_1_Plus_Cases'', ''S2_No_of_1_Plus_Cases'', ''S3_No_of_1_Plus_Cases'', ''S4_No_of_1_Plus_Cases'', ''S1_No_of_Cases_Disbursed'', ''S2_No_of_Cases_Disbursed'', ''S3_No_of_Cases_Disbursed'', ''S4_No_of_Cases_Disbursed'', ''S1_No_of_Live_Cases'', ''S2_No_of_Live_Cases'', ''S3_No_of_Live_Cases'', ''S4_No_of_Live_Cases'', ''S1_Assigned_Cases_AUM'', ''S2_Assigned_Cases_AUM'', ''S3_Assigned_Cases_AUM'', ''S4_Assigned_Cases_AUM'', ''S1_Interest_Rate'', ''S2_Interest_Rate'', ''S3_Interest_Rate'', ''S4_Interest_Rate'', ''S2_and_S3_No_of_Headcount_New_Business_YTD'', ''S1_No_of_Headcount'', ''S4_No_of_Headcount'', ''Copy_to_New_Business_YTD_from_Headcount_Net_Balance_HO'', /*Allocation In */
+							''S1_Interest_Cost'', ''S2_Interest_Cost'', ''S3_Interest_Cost'', ''S4_Interest_Cost'', ''S1_Periodic_Disbursement'', ''S1_90_Plus_AUM'', ''S2_90_Plus_AUM'', ''S3_90_Plus_AUM'', ''S4_90_Plus_AUM'', ''S1_90_Plus_AUM_HL'', ''S2_90_Plus_AUM_HL'', ''S3_90_Plus_AUM_HL'', ''S4_90_Plus_AUM_HL'', ''S1_90_Plus_AUM_NHL'', ''S2_90_Plus_AUM_NHL'', ''S3_90_Plus_AUM_NHL'', ''S4_90_Plus_AUM_NHL'', ''S1_Disbursements'', ''S2_Disbursements'', ''S3_Disbursements'', ''S4_Disbursements'', ''S1_AUM'', ''S2_AUM'', ''S3_AUM'', ''S4_AUM'', ''S1_AUM_HL'', ''S2_AUM_HL'', ''S3_AUM_HL'', ''S4_AUM_HL'', ''S1_AUM_NHL'', ''S2_AUM_NHL'', ''S3_AUM_NHL'', ''S4_AUM_NHL'', ''S1_PBT_of_Branch'', ''S2_PBT_of_Branch'', ''S3_PBT_of_Branch'', ''S4_PBT_of_Branch'', ''S2_Periodic_Disbursement'', ''S3_Periodic_Disbursement'', ''S4_Periodic_Disbursement'', ''S1_Headcount'', ''S2_Headcount'', ''S3_Headcount'', ''S4_Headcount'', ''S1_New_Business_YTD'', ''S2_New_Business_YTD'', ''S3_New_Business_YTD'', ''S4_New_Business_YTD'', ''S1_No_of_1_Plus_Cases'', ''S2_No_of_1_Plus_Cases'', ''S3_No_of_1_Plus_Cases'', ''S4_No_of_1_Plus_Cases'', ''S1_No_of_Cases_Disbursed'', ''S2_No_of_Cases_Disbursed'', ''S3_No_of_Cases_Disbursed'', ''S4_No_of_Cases_Disbursed'', ''S1_No_of_Live_Cases'', ''S2_No_of_Live_Cases'', ''S3_No_of_Live_Cases'', ''S4_No_of_Live_Cases'', ''S1_Assigned_Cases_AUM'', ''S2_Assigned_Cases_AUM'', ''S3_Assigned_Cases_AUM'', ''S4_Assigned_Cases_AUM'', ''S1_Interest_Rate'', ''S2_Interest_Rate'', ''S3_Interest_Rate'', ''S4_Interest_Rate'', ''S1_No_of_Headcount'', ''S4_No_of_Headcount'', ''S2_No_of_Headcount'', ''S3_No_of_Headcount'') /*Allocation Out */
+							AND UPPER(TRIM(COST_CENTER)) NOT IN (''TOTAL_COST CENTER'', ''ALL_COST CENTER'') 
+							AND UPPER(TRIM(VERTICAL)) NOT IN ( ''TOTAL_VERTICAL'' , ''ALL_VERTICAL'') 
+							AND UPPER(TRIM(PRODUCT)) NOT IN ( ''TOTAL_PRODUCT'', ''ALL_PRODUCT'') 
+							AND UPPER(TRIM(BALANCE)) IN (''PCM_ALLOCATION IN'', ''PCM_ALLOCATION OUT'')
+						THEN (AMOUNT) 
+						ELSE 0 
+					END) AS ALLOCATED_OTHER_INCOME_FROM_HO,
+					
+				SUM(CASE 
+						WHEN UPPER(TRIM(ACCOUNT)) IN (''AC_41030000'', ''AC_41040000'', ''AC_42000000'')
+							AND TRIM(RULE) IN (''S1_and_S2_SH_and_Above_No_of_Headcount_New_Business_YTD'', ''S1_09_Uttar_Pradesh'', ''S2_09_Uttar_Pradesh'', ''S1_SH_and_Above'', ''S2_SH_and_Above'', ''S3_SH_and_Above'', ''S4_SH_and_Above'', ''S2_and_S3_No_of_Headcount_New_Business_YTD_PE'',''Copy_to_New_Business_YTD_from_Headcount_Net_Balance_SH_and_Above'', /* Allocation In */ ''S1_09_Uttar_Pradesh'', ''S2_09_Uttar_Pradesh'', ''S1_SH_and_Above'', ''S2_SH_and_Above'', ''S3_SH_and_Above'', ''S4_SH_and_Above'', ''S1_SH_and_Above_No_of_Headcount'', ''S2_SH_and_Above_No_of_Headcount'') /* Allocation Out */
+							AND UPPER(TRIM(COST_CENTER)) NOT IN (''TOTAL_COST CENTER'', ''ALL_COST CENTER'') 
+							AND UPPER(TRIM(VERTICAL)) NOT IN ( ''TOTAL_VERTICAL'' , ''ALL_VERTICAL'') 
+							AND UPPER(TRIM(PRODUCT)) NOT IN ( ''TOTAL_PRODUCT'', ''ALL_PRODUCT'') 
+							AND UPPER(TRIM(BALANCE)) IN (''PCM_ALLOCATION IN'', ''PCM_ALLOCATION OUT'')
+						THEN (AMOUNT) 
+						ELSE 0 
+					END) AS ALLOCATED_OTHER_INCOME_FROM_BRANCH,
+					
+				SUM(CASE 
+						WHEN UPPER(TRIM(ACCOUNT)) = ''AC_50000000''
+							AND UPPER(TRIM(COST_CENTER)) NOT IN (''TOTAL_COST CENTER'', ''ALL_COST CENTER'')
+							AND TRIM(RULE) IN (''S1_Interest_Cost'', ''S2_Interest_Cost'', ''S3_Interest_Cost'', ''S4_Interest_Cost'', ''S1_Periodic_Disbursement'', ''S1_90_Plus_AUM'', ''S2_90_Plus_AUM'', ''S3_90_Plus_AUM'', ''S4_90_Plus_AUM'', ''S1_90_Plus_AUM_HL'', ''S2_90_Plus_AUM_HL'', ''S3_90_Plus_AUM_HL'', ''S4_90_Plus_AUM_HL'', ''S1_90_Plus_AUM_NHL'', ''S2_90_Plus_AUM_NHL'', ''S3_90_Plus_AUM_NHL'', ''S4_90_Plus_AUM_NHL'', ''S1_Disbursements'', ''S2_Disbursements'', ''S3_Disbursements'', ''S4_Disbursements'', ''S1_AUM'', ''S2_AUM'', ''S3_AUM'', ''S4_AUM'', ''S1_AUM_HL'', ''S2_AUM_HL'', ''S3_AUM_HL'', ''S4_AUM_HL'', ''S1_AUM_NHL'', ''S2_AUM_NHL'', ''S3_AUM_NHL'', ''S4_AUM_NHL'', ''S1_PBT_of_Branch'', ''S2_PBT_of_Branch'', ''S3_PBT_of_Branch'', ''S4_PBT_of_Branch'', ''S2_Periodic_Disbursement'', ''S3_Periodic_Disbursement'', ''S4_Periodic_Disbursement'', ''S1_Headcount'', ''S2_Headcount'', ''S3_Headcount'', ''S4_Headcount'', ''S1_New_Business_YTD'', ''S2_New_Business_YTD'', ''S3_New_Business_YTD'', ''S4_New_Business_YTD'', ''S1_No_of_1_Plus_Cases'', ''S2_No_of_1_Plus_Cases'', ''S3_No_of_1_Plus_Cases'', ''S4_No_of_1_Plus_Cases'', ''S1_No_of_Cases_Disbursed'', ''S2_No_of_Cases_Disbursed'', ''S3_No_of_Cases_Disbursed'', ''S4_No_of_Cases_Disbursed'', ''S1_No_of_Live_Cases'', ''S2_No_of_Live_Cases'', ''S3_No_of_Live_Cases'', ''S4_No_of_Live_Cases'', ''S1_Assigned_Cases_AUM'', ''S2_Assigned_Cases_AUM'', ''S3_Assigned_Cases_AUM'', ''S4_Assigned_Cases_AUM'', ''S1_Interest_Rate'', ''S2_Interest_Rate'', ''S3_Interest_Rate'', ''S4_Interest_Rate'', ''S2_and_S3_No_of_Headcount_New_Business_YTD'', ''S1_No_of_Headcount'', ''S4_No_of_Headcount'', ''Copy_to_New_Business_YTD_from_Headcount_Net_Balance_HO'', /*Allocation In */
+							''S1_Interest_Cost'', ''S2_Interest_Cost'', ''S3_Interest_Cost'', ''S4_Interest_Cost'', ''S1_Periodic_Disbursement'', ''S1_90_Plus_AUM'', ''S2_90_Plus_AUM'', ''S3_90_Plus_AUM'', ''S4_90_Plus_AUM'', ''S1_90_Plus_AUM_HL'', ''S2_90_Plus_AUM_HL'', ''S3_90_Plus_AUM_HL'', ''S4_90_Plus_AUM_HL'', ''S1_90_Plus_AUM_NHL'', ''S2_90_Plus_AUM_NHL'', ''S3_90_Plus_AUM_NHL'', ''S4_90_Plus_AUM_NHL'', ''S1_Disbursements'', ''S2_Disbursements'', ''S3_Disbursements'', ''S4_Disbursements'', ''S1_AUM'', ''S2_AUM'', ''S3_AUM'', ''S4_AUM'', ''S1_AUM_HL'', ''S2_AUM_HL'', ''S3_AUM_HL'', ''S4_AUM_HL'', ''S1_AUM_NHL'', ''S2_AUM_NHL'', ''S3_AUM_NHL'', ''S4_AUM_NHL'', ''S1_PBT_of_Branch'', ''S2_PBT_of_Branch'', ''S3_PBT_of_Branch'', ''S4_PBT_of_Branch'', ''S2_Periodic_Disbursement'', ''S3_Periodic_Disbursement'', ''S4_Periodic_Disbursement'', ''S1_Headcount'', ''S2_Headcount'', ''S3_Headcount'', ''S4_Headcount'', ''S1_New_Business_YTD'', ''S2_New_Business_YTD'', ''S3_New_Business_YTD'', ''S4_New_Business_YTD'', ''S1_No_of_1_Plus_Cases'', ''S2_No_of_1_Plus_Cases'', ''S3_No_of_1_Plus_Cases'', ''S4_No_of_1_Plus_Cases'', ''S1_No_of_Cases_Disbursed'', ''S2_No_of_Cases_Disbursed'', ''S3_No_of_Cases_Disbursed'', ''S4_No_of_Cases_Disbursed'', ''S1_No_of_Live_Cases'', ''S2_No_of_Live_Cases'', ''S3_No_of_Live_Cases'', ''S4_No_of_Live_Cases'', ''S1_Assigned_Cases_AUM'', ''S2_Assigned_Cases_AUM'', ''S3_Assigned_Cases_AUM'', ''S4_Assigned_Cases_AUM'', ''S1_Interest_Rate'', ''S2_Interest_Rate'', ''S3_Interest_Rate'', ''S4_Interest_Rate'', ''S1_No_of_Headcount'', ''S4_No_of_Headcount'', ''S2_No_of_Headcount'', ''S3_No_of_Headcount'') /*Allocation Out */ 
+							AND UPPER(TRIM(VERTICAL)) NOT IN ( ''TOTAL_VERTICAL'' , ''ALL_VERTICAL'') 
+							AND UPPER(TRIM(PRODUCT)) NOT IN ( ''TOTAL_PRODUCT'', ''ALL_PRODUCT'') 
+							AND UPPER(TRIM(BALANCE)) IN (''PCM_ALLOCATION IN'', ''PCM_ALLOCATION OUT'')
+						THEN (AMOUNT)
+						ELSE 0 
+					END) -
+                SUM(CASE 
+                        WHEN UPPER(TRIM(ACCOUNT)) IN (''AC_51070000'', ''AC_51090000'')
+                            AND UPPER(TRIM(COST_CENTER)) NOT IN (''TOTAL_COST CENTER'', ''ALL_COST CENTER'')
+                            AND TRIM(RULE) IN (''S1_Interest_Cost'', ''S2_Interest_Cost'', ''S3_Interest_Cost'', ''S4_Interest_Cost'', ''S1_Periodic_Disbursement'', ''S1_90_Plus_AUM'', ''S2_90_Plus_AUM'', ''S3_90_Plus_AUM'', ''S4_90_Plus_AUM'', ''S1_90_Plus_AUM_HL'', ''S2_90_Plus_AUM_HL'', ''S3_90_Plus_AUM_HL'', ''S4_90_Plus_AUM_HL'', ''S1_90_Plus_AUM_NHL'', ''S2_90_Plus_AUM_NHL'', ''S3_90_Plus_AUM_NHL'', ''S4_90_Plus_AUM_NHL'', ''S1_Disbursements'', ''S2_Disbursements'', ''S3_Disbursements'', ''S4_Disbursements'', ''S1_AUM'', ''S2_AUM'', ''S3_AUM'', ''S4_AUM'', ''S1_AUM_HL'', ''S2_AUM_HL'', ''S3_AUM_HL'', ''S4_AUM_HL'', ''S1_AUM_NHL'', ''S2_AUM_NHL'', ''S3_AUM_NHL'', ''S4_AUM_NHL'', ''S1_PBT_of_Branch'', ''S2_PBT_of_Branch'', ''S3_PBT_of_Branch'', ''S4_PBT_of_Branch'', ''S2_Periodic_Disbursement'', ''S3_Periodic_Disbursement'', ''S4_Periodic_Disbursement'', ''S1_Headcount'', ''S2_Headcount'', ''S3_Headcount'', ''S4_Headcount'', ''S1_New_Business_YTD'', ''S2_New_Business_YTD'', ''S3_New_Business_YTD'', ''S4_New_Business_YTD'', ''S1_No_of_1_Plus_Cases'', ''S2_No_of_1_Plus_Cases'', ''S3_No_of_1_Plus_Cases'', ''S4_No_of_1_Plus_Cases'', ''S1_No_of_Cases_Disbursed'', ''S2_No_of_Cases_Disbursed'', ''S3_No_of_Cases_Disbursed'', ''S4_No_of_Cases_Disbursed'', ''S1_No_of_Live_Cases'', ''S2_No_of_Live_Cases'', ''S3_No_of_Live_Cases'', ''S4_No_of_Live_Cases'', ''S1_Assigned_Cases_AUM'', ''S2_Assigned_Cases_AUM'', ''S3_Assigned_Cases_AUM'', ''S4_Assigned_Cases_AUM'', ''S1_Interest_Rate'', ''S2_Interest_Rate'', ''S3_Interest_Rate'', ''S4_Interest_Rate'', ''S2_and_S3_No_of_Headcount_New_Business_YTD'', ''S1_No_of_Headcount'', ''S4_No_of_Headcount'', ''Copy_to_New_Business_YTD_from_Headcount_Net_Balance_HO'', /*Allocation In */
+							''S1_Interest_Cost'', ''S2_Interest_Cost'', ''S3_Interest_Cost'', ''S4_Interest_Cost'', ''S1_Periodic_Disbursement'', ''S1_90_Plus_AUM'', ''S2_90_Plus_AUM'', ''S3_90_Plus_AUM'', ''S4_90_Plus_AUM'', ''S1_90_Plus_AUM_HL'', ''S2_90_Plus_AUM_HL'', ''S3_90_Plus_AUM_HL'', ''S4_90_Plus_AUM_HL'', ''S1_90_Plus_AUM_NHL'', ''S2_90_Plus_AUM_NHL'', ''S3_90_Plus_AUM_NHL'', ''S4_90_Plus_AUM_NHL'', ''S1_Disbursements'', ''S2_Disbursements'', ''S3_Disbursements'', ''S4_Disbursements'', ''S1_AUM'', ''S2_AUM'', ''S3_AUM'', ''S4_AUM'', ''S1_AUM_HL'', ''S2_AUM_HL'', ''S3_AUM_HL'', ''S4_AUM_HL'', ''S1_AUM_NHL'', ''S2_AUM_NHL'', ''S3_AUM_NHL'', ''S4_AUM_NHL'', ''S1_PBT_of_Branch'', ''S2_PBT_of_Branch'', ''S3_PBT_of_Branch'', ''S4_PBT_of_Branch'', ''S2_Periodic_Disbursement'', ''S3_Periodic_Disbursement'', ''S4_Periodic_Disbursement'', ''S1_Headcount'', ''S2_Headcount'', ''S3_Headcount'', ''S4_Headcount'', ''S1_New_Business_YTD'', ''S2_New_Business_YTD'', ''S3_New_Business_YTD'', ''S4_New_Business_YTD'', ''S1_No_of_1_Plus_Cases'', ''S2_No_of_1_Plus_Cases'', ''S3_No_of_1_Plus_Cases'', ''S4_No_of_1_Plus_Cases'', ''S1_No_of_Cases_Disbursed'', ''S2_No_of_Cases_Disbursed'', ''S3_No_of_Cases_Disbursed'', ''S4_No_of_Cases_Disbursed'', ''S1_No_of_Live_Cases'', ''S2_No_of_Live_Cases'', ''S3_No_of_Live_Cases'', ''S4_No_of_Live_Cases'', ''S1_Assigned_Cases_AUM'', ''S2_Assigned_Cases_AUM'', ''S3_Assigned_Cases_AUM'', ''S4_Assigned_Cases_AUM'', ''S1_Interest_Rate'', ''S2_Interest_Rate'', ''S3_Interest_Rate'', ''S4_Interest_Rate'', ''S1_No_of_Headcount'', ''S4_No_of_Headcount'', ''S2_No_of_Headcount'', ''S3_No_of_Headcount'') /*Allocation Out */ 
+                            AND UPPER(TRIM(VERTICAL)) NOT IN ( ''TOTAL_VERTICAL'' , ''ALL_VERTICAL'') 
+                            AND UPPER(TRIM(PRODUCT)) NOT IN ( ''TOTAL_PRODUCT'', ''ALL_PRODUCT'') 
+                            AND UPPER(TRIM(BALANCE)) IN (''PCM_ALLOCATION IN'', ''PCM_ALLOCATION OUT'')
+                        THEN (AMOUNT)
+                        ELSE 0 
+                    END) AS ALLOCATED_EXPENDITURE_FROM_HO,
+				
+				SUM(CASE 
+						WHEN UPPER(TRIM(ACCOUNT)) = ''AC_50000000''
+							AND UPPER(TRIM(COST_CENTER)) NOT IN (''TOTAL_COST CENTER'', ''ALL_COST CENTER'')
+							AND TRIM(RULE) IN (''S1_and_S2_SH_and_Above_No_of_Headcount_New_Business_YTD'', ''S1_09_Uttar_Pradesh'', ''S2_09_Uttar_Pradesh'', ''S1_SH_and_Above'', ''S2_SH_and_Above'', ''S3_SH_and_Above'', ''S4_SH_and_Above'', ''S2_and_S3_No_of_Headcount_New_Business_YTD_PE'',''Copy_to_New_Business_YTD_from_Headcount_Net_Balance_SH_and_Above'', /* Allocation In */ ''S1_09_Uttar_Pradesh'', ''S2_09_Uttar_Pradesh'', ''S1_SH_and_Above'', ''S2_SH_and_Above'', ''S3_SH_and_Above'', ''S4_SH_and_Above'', ''S1_SH_and_Above_No_of_Headcount'', ''S2_SH_and_Above_No_of_Headcount'') /* Allocation Out */ 
+							AND UPPER(TRIM(VERTICAL)) NOT IN ( ''TOTAL_VERTICAL'' , ''ALL_VERTICAL'') 
+							AND UPPER(TRIM(PRODUCT)) NOT IN ( ''TOTAL_PRODUCT'', ''ALL_PRODUCT'') 
+							AND UPPER(TRIM(BALANCE)) IN (''PCM_ALLOCATION IN'', ''PCM_ALLOCATION OUT'')
+						THEN (AMOUNT)
+						ELSE 0 
+					END) -
+                SUM(CASE 
+                        WHEN UPPER(TRIM(ACCOUNT)) IN (''AC_51070000'', ''AC_51090000'')
+                            AND UPPER(TRIM(COST_CENTER)) NOT IN (''TOTAL_COST CENTER'', ''ALL_COST CENTER'')
+                            AND TRIM(RULE) IN (''S1_and_S2_SH_and_Above_No_of_Headcount_New_Business_YTD'', ''S1_09_Uttar_Pradesh'', ''S2_09_Uttar_Pradesh'', ''S1_SH_and_Above'', ''S2_SH_and_Above'', ''S3_SH_and_Above'', ''S4_SH_and_Above'', ''S2_and_S3_No_of_Headcount_New_Business_YTD_PE'',''Copy_to_New_Business_YTD_from_Headcount_Net_Balance_SH_and_Above'', /* Allocation In */ ''S1_09_Uttar_Pradesh'', ''S2_09_Uttar_Pradesh'', ''S1_SH_and_Above'', ''S2_SH_and_Above'', ''S3_SH_and_Above'', ''S4_SH_and_Above'', ''S1_SH_and_Above_No_of_Headcount'', ''S2_SH_and_Above_No_of_Headcount'') /* Allocation Out */ 
+                            AND UPPER(TRIM(VERTICAL)) NOT IN ( ''TOTAL_VERTICAL'' , ''ALL_VERTICAL'') 
+                            AND UPPER(TRIM(PRODUCT)) NOT IN ( ''TOTAL_PRODUCT'', ''ALL_PRODUCT'') 
+                            AND UPPER(TRIM(BALANCE)) IN (''PCM_ALLOCATION IN'', ''PCM_ALLOCATION OUT'')
+                        THEN (AMOUNT)
+                        ELSE 0 
+                    END) AS ALLOCATED_EXPENDITURE_FROM_BRANCH,
+					
+				SUM(CASE 
+						WHEN UPPER(TRIM(ACCOUNT)) = ''AC_51060000''
+							AND UPPER(TRIM(COST_CENTER)) NOT IN (''TOTAL_COST CENTER'', ''ALL_COST CENTER'')
+							AND TRIM(RULE) IN (''S1_Interest_Cost'', ''S2_Interest_Cost'', ''S3_Interest_Cost'', ''S4_Interest_Cost'', ''S1_Periodic_Disbursement'', ''S1_90_Plus_AUM'', ''S2_90_Plus_AUM'', ''S3_90_Plus_AUM'', ''S4_90_Plus_AUM'', ''S1_90_Plus_AUM_HL'', ''S2_90_Plus_AUM_HL'', ''S3_90_Plus_AUM_HL'', ''S4_90_Plus_AUM_HL'', ''S1_90_Plus_AUM_NHL'', ''S2_90_Plus_AUM_NHL'', ''S3_90_Plus_AUM_NHL'', ''S4_90_Plus_AUM_NHL'', ''S1_Disbursements'', ''S2_Disbursements'', ''S3_Disbursements'', ''S4_Disbursements'', ''S1_AUM'', ''S2_AUM'', ''S3_AUM'', ''S4_AUM'', ''S1_AUM_HL'', ''S2_AUM_HL'', ''S3_AUM_HL'', ''S4_AUM_HL'', ''S1_AUM_NHL'', ''S2_AUM_NHL'', ''S3_AUM_NHL'', ''S4_AUM_NHL'', ''S1_PBT_of_Branch'', ''S2_PBT_of_Branch'', ''S3_PBT_of_Branch'', ''S4_PBT_of_Branch'', ''S2_Periodic_Disbursement'', ''S3_Periodic_Disbursement'', ''S4_Periodic_Disbursement'', ''S1_Headcount'', ''S2_Headcount'', ''S3_Headcount'', ''S4_Headcount'', ''S1_New_Business_YTD'', ''S2_New_Business_YTD'', ''S3_New_Business_YTD'', ''S4_New_Business_YTD'', ''S1_No_of_1_Plus_Cases'', ''S2_No_of_1_Plus_Cases'', ''S3_No_of_1_Plus_Cases'', ''S4_No_of_1_Plus_Cases'', ''S1_No_of_Cases_Disbursed'', ''S2_No_of_Cases_Disbursed'', ''S3_No_of_Cases_Disbursed'', ''S4_No_of_Cases_Disbursed'', ''S1_No_of_Live_Cases'', ''S2_No_of_Live_Cases'', ''S3_No_of_Live_Cases'', ''S4_No_of_Live_Cases'', ''S1_Assigned_Cases_AUM'', ''S2_Assigned_Cases_AUM'', ''S3_Assigned_Cases_AUM'', ''S4_Assigned_Cases_AUM'', ''S1_Interest_Rate'', ''S2_Interest_Rate'', ''S3_Interest_Rate'', ''S4_Interest_Rate'', ''S2_and_S3_No_of_Headcount_New_Business_YTD'', ''S1_No_of_Headcount'', ''S4_No_of_Headcount'', ''Copy_to_New_Business_YTD_from_Headcount_Net_Balance_HO'', /*Allocation In */
+							''S1_Interest_Cost'', ''S2_Interest_Cost'', ''S3_Interest_Cost'', ''S4_Interest_Cost'', ''S1_Periodic_Disbursement'', ''S1_90_Plus_AUM'', ''S2_90_Plus_AUM'', ''S3_90_Plus_AUM'', ''S4_90_Plus_AUM'', ''S1_90_Plus_AUM_HL'', ''S2_90_Plus_AUM_HL'', ''S3_90_Plus_AUM_HL'', ''S4_90_Plus_AUM_HL'', ''S1_90_Plus_AUM_NHL'', ''S2_90_Plus_AUM_NHL'', ''S3_90_Plus_AUM_NHL'', ''S4_90_Plus_AUM_NHL'', ''S1_Disbursements'', ''S2_Disbursements'', ''S3_Disbursements'', ''S4_Disbursements'', ''S1_AUM'', ''S2_AUM'', ''S3_AUM'', ''S4_AUM'', ''S1_AUM_HL'', ''S2_AUM_HL'', ''S3_AUM_HL'', ''S4_AUM_HL'', ''S1_AUM_NHL'', ''S2_AUM_NHL'', ''S3_AUM_NHL'', ''S4_AUM_NHL'', ''S1_PBT_of_Branch'', ''S2_PBT_of_Branch'', ''S3_PBT_of_Branch'', ''S4_PBT_of_Branch'', ''S2_Periodic_Disbursement'', ''S3_Periodic_Disbursement'', ''S4_Periodic_Disbursement'', ''S1_Headcount'', ''S2_Headcount'', ''S3_Headcount'', ''S4_Headcount'', ''S1_New_Business_YTD'', ''S2_New_Business_YTD'', ''S3_New_Business_YTD'', ''S4_New_Business_YTD'', ''S1_No_of_1_Plus_Cases'', ''S2_No_of_1_Plus_Cases'', ''S3_No_of_1_Plus_Cases'', ''S4_No_of_1_Plus_Cases'', ''S1_No_of_Cases_Disbursed'', ''S2_No_of_Cases_Disbursed'', ''S3_No_of_Cases_Disbursed'', ''S4_No_of_Cases_Disbursed'', ''S1_No_of_Live_Cases'', ''S2_No_of_Live_Cases'', ''S3_No_of_Live_Cases'', ''S4_No_of_Live_Cases'', ''S1_Assigned_Cases_AUM'', ''S2_Assigned_Cases_AUM'', ''S3_Assigned_Cases_AUM'', ''S4_Assigned_Cases_AUM'', ''S1_Interest_Rate'', ''S2_Interest_Rate'', ''S3_Interest_Rate'', ''S4_Interest_Rate'', ''S1_No_of_Headcount'', ''S4_No_of_Headcount'', ''S2_No_of_Headcount'', ''S3_No_of_Headcount'') /*Allocation Out */ 
+							AND UPPER(TRIM(VERTICAL)) NOT IN ( ''TOTAL_VERTICAL'' , ''ALL_VERTICAL'') 
+							AND UPPER(TRIM(PRODUCT)) NOT IN ( ''TOTAL_PRODUCT'', ''ALL_PRODUCT'') 
+							AND UPPER(TRIM(BALANCE)) IN (''PCM_ALLOCATION IN'', ''PCM_ALLOCATION OUT'')
+						THEN (AMOUNT) 
+						ELSE 0 
+					END) AS ALLOCATED_EMPLOYEE_BENEFIT_EXPENSE_FROM_HO,
+					
+				SUM(CASE 
+						WHEN UPPER(TRIM(ACCOUNT)) = ''AC_51060000''
+							AND UPPER(TRIM(COST_CENTER)) NOT IN (''TOTAL_COST CENTER'', ''ALL_COST CENTER'')
+							AND TRIM(RULE) IN (''S1_and_S2_SH_and_Above_No_of_Headcount_New_Business_YTD'', ''S1_09_Uttar_Pradesh'', ''S2_09_Uttar_Pradesh'', ''S1_SH_and_Above'', ''S2_SH_and_Above'', ''S3_SH_and_Above'', ''S4_SH_and_Above'', ''S2_and_S3_No_of_Headcount_New_Business_YTD_PE'',''Copy_to_New_Business_YTD_from_Headcount_Net_Balance_SH_and_Above'', /* Allocation In */ ''S1_09_Uttar_Pradesh'', ''S2_09_Uttar_Pradesh'', ''S1_SH_and_Above'', ''S2_SH_and_Above'', ''S3_SH_and_Above'', ''S4_SH_and_Above'', ''S1_SH_and_Above_No_of_Headcount'', ''S2_SH_and_Above_No_of_Headcount'') /* Allocation Out */ 
+							AND UPPER(TRIM(VERTICAL)) NOT IN ( ''TOTAL_VERTICAL'' , ''ALL_VERTICAL'') 
+							AND UPPER(TRIM(PRODUCT)) NOT IN ( ''TOTAL_PRODUCT'', ''ALL_PRODUCT'') 
+							AND UPPER(TRIM(BALANCE)) IN (''PCM_ALLOCATION IN'', ''PCM_ALLOCATION OUT'')
+						THEN (AMOUNT) 
+						ELSE 0 
+					END) AS ALLOCATED_EMPLOYEE_BENEFIT_EXPENSE_FROM_BRANCH,
+					
+				SUM(CASE 
+						WHEN UPPER(TRIM(ACCOUNT)) IN (''AC_51010000'', ''AC_51020000'', ''AC_51080000'')
+							AND UPPER(TRIM(COST_CENTER)) NOT IN (''TOTAL_COST CENTER'', ''ALL_COST CENTER'')
+							AND TRIM(RULE) IN (''S1_Interest_Cost'', ''S2_Interest_Cost'', ''S3_Interest_Cost'', ''S4_Interest_Cost'', ''S1_Periodic_Disbursement'', ''S1_90_Plus_AUM'', ''S2_90_Plus_AUM'', ''S3_90_Plus_AUM'', ''S4_90_Plus_AUM'', ''S1_90_Plus_AUM_HL'', ''S2_90_Plus_AUM_HL'', ''S3_90_Plus_AUM_HL'', ''S4_90_Plus_AUM_HL'', ''S1_90_Plus_AUM_NHL'', ''S2_90_Plus_AUM_NHL'', ''S3_90_Plus_AUM_NHL'', ''S4_90_Plus_AUM_NHL'', ''S1_Disbursements'', ''S2_Disbursements'', ''S3_Disbursements'', ''S4_Disbursements'', ''S1_AUM'', ''S2_AUM'', ''S3_AUM'', ''S4_AUM'', ''S1_AUM_HL'', ''S2_AUM_HL'', ''S3_AUM_HL'', ''S4_AUM_HL'', ''S1_AUM_NHL'', ''S2_AUM_NHL'', ''S3_AUM_NHL'', ''S4_AUM_NHL'', ''S1_PBT_of_Branch'', ''S2_PBT_of_Branch'', ''S3_PBT_of_Branch'', ''S4_PBT_of_Branch'', ''S2_Periodic_Disbursement'', ''S3_Periodic_Disbursement'', ''S4_Periodic_Disbursement'', ''S1_Headcount'', ''S2_Headcount'', ''S3_Headcount'', ''S4_Headcount'', ''S1_New_Business_YTD'', ''S2_New_Business_YTD'', ''S3_New_Business_YTD'', ''S4_New_Business_YTD'', ''S1_No_of_1_Plus_Cases'', ''S2_No_of_1_Plus_Cases'', ''S3_No_of_1_Plus_Cases'', ''S4_No_of_1_Plus_Cases'', ''S1_No_of_Cases_Disbursed'', ''S2_No_of_Cases_Disbursed'', ''S3_No_of_Cases_Disbursed'', ''S4_No_of_Cases_Disbursed'', ''S1_No_of_Live_Cases'', ''S2_No_of_Live_Cases'', ''S3_No_of_Live_Cases'', ''S4_No_of_Live_Cases'', ''S1_Assigned_Cases_AUM'', ''S2_Assigned_Cases_AUM'', ''S3_Assigned_Cases_AUM'', ''S4_Assigned_Cases_AUM'', ''S1_Interest_Rate'', ''S2_Interest_Rate'', ''S3_Interest_Rate'', ''S4_Interest_Rate'', ''S2_and_S3_No_of_Headcount_New_Business_YTD'', ''S1_No_of_Headcount'', ''S4_No_of_Headcount'', ''Copy_to_New_Business_YTD_from_Headcount_Net_Balance_HO'', /*Allocation In */
+							''S1_Interest_Cost'', ''S2_Interest_Cost'', ''S3_Interest_Cost'', ''S4_Interest_Cost'', ''S1_Periodic_Disbursement'', ''S1_90_Plus_AUM'', ''S2_90_Plus_AUM'', ''S3_90_Plus_AUM'', ''S4_90_Plus_AUM'', ''S1_90_Plus_AUM_HL'', ''S2_90_Plus_AUM_HL'', ''S3_90_Plus_AUM_HL'', ''S4_90_Plus_AUM_HL'', ''S1_90_Plus_AUM_NHL'', ''S2_90_Plus_AUM_NHL'', ''S3_90_Plus_AUM_NHL'', ''S4_90_Plus_AUM_NHL'', ''S1_Disbursements'', ''S2_Disbursements'', ''S3_Disbursements'', ''S4_Disbursements'', ''S1_AUM'', ''S2_AUM'', ''S3_AUM'', ''S4_AUM'', ''S1_AUM_HL'', ''S2_AUM_HL'', ''S3_AUM_HL'', ''S4_AUM_HL'', ''S1_AUM_NHL'', ''S2_AUM_NHL'', ''S3_AUM_NHL'', ''S4_AUM_NHL'', ''S1_PBT_of_Branch'', ''S2_PBT_of_Branch'', ''S3_PBT_of_Branch'', ''S4_PBT_of_Branch'', ''S2_Periodic_Disbursement'', ''S3_Periodic_Disbursement'', ''S4_Periodic_Disbursement'', ''S1_Headcount'', ''S2_Headcount'', ''S3_Headcount'', ''S4_Headcount'', ''S1_New_Business_YTD'', ''S2_New_Business_YTD'', ''S3_New_Business_YTD'', ''S4_New_Business_YTD'', ''S1_No_of_1_Plus_Cases'', ''S2_No_of_1_Plus_Cases'', ''S3_No_of_1_Plus_Cases'', ''S4_No_of_1_Plus_Cases'', ''S1_No_of_Cases_Disbursed'', ''S2_No_of_Cases_Disbursed'', ''S3_No_of_Cases_Disbursed'', ''S4_No_of_Cases_Disbursed'', ''S1_No_of_Live_Cases'', ''S2_No_of_Live_Cases'', ''S3_No_of_Live_Cases'', ''S4_No_of_Live_Cases'', ''S1_Assigned_Cases_AUM'', ''S2_Assigned_Cases_AUM'', ''S3_Assigned_Cases_AUM'', ''S4_Assigned_Cases_AUM'', ''S1_Interest_Rate'', ''S2_Interest_Rate'', ''S3_Interest_Rate'', ''S4_Interest_Rate'', ''S1_No_of_Headcount'', ''S4_No_of_Headcount'', ''S2_No_of_Headcount'', ''S3_No_of_Headcount'') /*Allocation Out */
+							AND UPPER(TRIM(VERTICAL)) NOT IN ( ''TOTAL_VERTICAL'' , ''ALL_VERTICAL'') 
+							AND UPPER(TRIM(PRODUCT)) NOT IN ( ''TOTAL_PRODUCT'', ''ALL_PRODUCT'') 
+							AND UPPER(TRIM(BALANCE)) IN (''PCM_ALLOCATION IN'', ''PCM_ALLOCATION OUT'')
+						THEN (AMOUNT) 
+						ELSE 0 
+					END) AS ALLOCATED_OTHER_OPERATING_EXPENSES_FROM_HO,
+					
+				SUM(CASE 
+						WHEN UPPER(TRIM(ACCOUNT)) IN (''AC_51010000'', ''AC_51020000'', ''AC_51080000'')
+							AND UPPER(TRIM(COST_CENTER)) NOT IN (''TOTAL_COST CENTER'', ''ALL_COST CENTER'')
+							AND TRIM(RULE) IN (''S1_and_S2_SH_and_Above_No_of_Headcount_New_Business_YTD'', ''S1_09_Uttar_Pradesh'', ''S2_09_Uttar_Pradesh'', ''S1_SH_and_Above'', ''S2_SH_and_Above'', ''S3_SH_and_Above'', ''S4_SH_and_Above'', ''S2_and_S3_No_of_Headcount_New_Business_YTD_PE'',''Copy_to_New_Business_YTD_from_Headcount_Net_Balance_SH_and_Above'', /* Allocation In */ ''S1_09_Uttar_Pradesh'', ''S2_09_Uttar_Pradesh'', ''S1_SH_and_Above'', ''S2_SH_and_Above'', ''S3_SH_and_Above'', ''S4_SH_and_Above'', ''S1_SH_and_Above_No_of_Headcount'', ''S2_SH_and_Above_No_of_Headcount'') /* Allocation Out */ 
+							AND UPPER(TRIM(VERTICAL)) NOT IN ( ''TOTAL_VERTICAL'' , ''ALL_VERTICAL'') 
+							AND UPPER(TRIM(PRODUCT)) NOT IN ( ''TOTAL_PRODUCT'', ''ALL_PRODUCT'') 
+							AND UPPER(TRIM(BALANCE)) IN (''PCM_ALLOCATION IN'', ''PCM_ALLOCATION OUT'')
+						THEN (AMOUNT) 
+						ELSE 0 
+					END) AS ALLOCATED_OTHER_OPERATING_EXPENSES_FROM_BRANCH,
+					
+				SUM(CASE 
+						WHEN UPPER(TRIM(ACCOUNT)) = ''AC_51050000''
+							AND UPPER(TRIM(COST_CENTER)) NOT IN (''TOTAL_COST CENTER'', ''ALL_COST CENTER'')
+							AND TRIM(RULE) IN (''S1_Interest_Cost'', ''S2_Interest_Cost'', ''S3_Interest_Cost'', ''S4_Interest_Cost'', ''S1_Periodic_Disbursement'', ''S1_90_Plus_AUM'', ''S2_90_Plus_AUM'', ''S3_90_Plus_AUM'', ''S4_90_Plus_AUM'', ''S1_90_Plus_AUM_HL'', ''S2_90_Plus_AUM_HL'', ''S3_90_Plus_AUM_HL'', ''S4_90_Plus_AUM_HL'', ''S1_90_Plus_AUM_NHL'', ''S2_90_Plus_AUM_NHL'', ''S3_90_Plus_AUM_NHL'', ''S4_90_Plus_AUM_NHL'', ''S1_Disbursements'', ''S2_Disbursements'', ''S3_Disbursements'', ''S4_Disbursements'', ''S1_AUM'', ''S2_AUM'', ''S3_AUM'', ''S4_AUM'', ''S1_AUM_HL'', ''S2_AUM_HL'', ''S3_AUM_HL'', ''S4_AUM_HL'', ''S1_AUM_NHL'', ''S2_AUM_NHL'', ''S3_AUM_NHL'', ''S4_AUM_NHL'', ''S1_PBT_of_Branch'', ''S2_PBT_of_Branch'', ''S3_PBT_of_Branch'', ''S4_PBT_of_Branch'', ''S2_Periodic_Disbursement'', ''S3_Periodic_Disbursement'', ''S4_Periodic_Disbursement'', ''S1_Headcount'', ''S2_Headcount'', ''S3_Headcount'', ''S4_Headcount'', ''S1_New_Business_YTD'', ''S2_New_Business_YTD'', ''S3_New_Business_YTD'', ''S4_New_Business_YTD'', ''S1_No_of_1_Plus_Cases'', ''S2_No_of_1_Plus_Cases'', ''S3_No_of_1_Plus_Cases'', ''S4_No_of_1_Plus_Cases'', ''S1_No_of_Cases_Disbursed'', ''S2_No_of_Cases_Disbursed'', ''S3_No_of_Cases_Disbursed'', ''S4_No_of_Cases_Disbursed'', ''S1_No_of_Live_Cases'', ''S2_No_of_Live_Cases'', ''S3_No_of_Live_Cases'', ''S4_No_of_Live_Cases'', ''S1_Assigned_Cases_AUM'', ''S2_Assigned_Cases_AUM'', ''S3_Assigned_Cases_AUM'', ''S4_Assigned_Cases_AUM'', ''S1_Interest_Rate'', ''S2_Interest_Rate'', ''S3_Interest_Rate'', ''S4_Interest_Rate'', ''S2_and_S3_No_of_Headcount_New_Business_YTD'', ''S1_No_of_Headcount'', ''S4_No_of_Headcount'', ''Copy_to_New_Business_YTD_from_Headcount_Net_Balance_HO'', /*Allocation In */
+							''S1_Interest_Cost'', ''S2_Interest_Cost'', ''S3_Interest_Cost'', ''S4_Interest_Cost'', ''S1_Periodic_Disbursement'', ''S1_90_Plus_AUM'', ''S2_90_Plus_AUM'', ''S3_90_Plus_AUM'', ''S4_90_Plus_AUM'', ''S1_90_Plus_AUM_HL'', ''S2_90_Plus_AUM_HL'', ''S3_90_Plus_AUM_HL'', ''S4_90_Plus_AUM_HL'', ''S1_90_Plus_AUM_NHL'', ''S2_90_Plus_AUM_NHL'', ''S3_90_Plus_AUM_NHL'', ''S4_90_Plus_AUM_NHL'', ''S1_Disbursements'', ''S2_Disbursements'', ''S3_Disbursements'', ''S4_Disbursements'', ''S1_AUM'', ''S2_AUM'', ''S3_AUM'', ''S4_AUM'', ''S1_AUM_HL'', ''S2_AUM_HL'', ''S3_AUM_HL'', ''S4_AUM_HL'', ''S1_AUM_NHL'', ''S2_AUM_NHL'', ''S3_AUM_NHL'', ''S4_AUM_NHL'', ''S1_PBT_of_Branch'', ''S2_PBT_of_Branch'', ''S3_PBT_of_Branch'', ''S4_PBT_of_Branch'', ''S2_Periodic_Disbursement'', ''S3_Periodic_Disbursement'', ''S4_Periodic_Disbursement'', ''S1_Headcount'', ''S2_Headcount'', ''S3_Headcount'', ''S4_Headcount'', ''S1_New_Business_YTD'', ''S2_New_Business_YTD'', ''S3_New_Business_YTD'', ''S4_New_Business_YTD'', ''S1_No_of_1_Plus_Cases'', ''S2_No_of_1_Plus_Cases'', ''S3_No_of_1_Plus_Cases'', ''S4_No_of_1_Plus_Cases'', ''S1_No_of_Cases_Disbursed'', ''S2_No_of_Cases_Disbursed'', ''S3_No_of_Cases_Disbursed'', ''S4_No_of_Cases_Disbursed'', ''S1_No_of_Live_Cases'', ''S2_No_of_Live_Cases'', ''S3_No_of_Live_Cases'', ''S4_No_of_Live_Cases'', ''S1_Assigned_Cases_AUM'', ''S2_Assigned_Cases_AUM'', ''S3_Assigned_Cases_AUM'', ''S4_Assigned_Cases_AUM'', ''S1_Interest_Rate'', ''S2_Interest_Rate'', ''S3_Interest_Rate'', ''S4_Interest_Rate'', ''S1_No_of_Headcount'', ''S4_No_of_Headcount'', ''S2_No_of_Headcount'', ''S3_No_of_Headcount'') /*Allocation Out */ 
+							AND UPPER(TRIM(VERTICAL)) NOT IN ( ''TOTAL_VERTICAL'' , ''ALL_VERTICAL'') 
+							AND UPPER(TRIM(PRODUCT)) NOT IN ( ''TOTAL_PRODUCT'', ''ALL_PRODUCT'') 
+							AND UPPER(TRIM(BALANCE)) IN (''PCM_ALLOCATION IN'', ''PCM_ALLOCATION OUT'')
+						THEN (AMOUNT) 
+						ELSE 0 
+					END) AS ALLOCATED_PROVISION_FOR_DELIQUENCIES_FROM_HO,
+					
+					SUM(CASE 
+						WHEN UPPER(TRIM(ACCOUNT)) = ''AC_51050000''
+							AND UPPER(TRIM(COST_CENTER)) NOT IN (''TOTAL_COST CENTER'', ''ALL_COST CENTER'')
+							AND TRIM(RULE) IN (''S1_and_S2_SH_and_Above_No_of_Headcount_New_Business_YTD'', ''S1_09_Uttar_Pradesh'', ''S2_09_Uttar_Pradesh'', ''S1_SH_and_Above'', ''S2_SH_and_Above'', ''S3_SH_and_Above'', ''S4_SH_and_Above'', ''S2_and_S3_No_of_Headcount_New_Business_YTD_PE'',''Copy_to_New_Business_YTD_from_Headcount_Net_Balance_SH_and_Above'', /* Allocation In */ ''S1_09_Uttar_Pradesh'', ''S2_09_Uttar_Pradesh'', ''S1_SH_and_Above'', ''S2_SH_and_Above'', ''S3_SH_and_Above'', ''S4_SH_and_Above'', ''S1_SH_and_Above_No_of_Headcount'', ''S2_SH_and_Above_No_of_Headcount'') /* Allocation Out */ 
+							AND UPPER(TRIM(VERTICAL)) NOT IN ( ''TOTAL_VERTICAL'' , ''ALL_VERTICAL'') 
+							AND UPPER(TRIM(PRODUCT)) NOT IN ( ''TOTAL_PRODUCT'', ''ALL_PRODUCT'') 
+							AND UPPER(TRIM(BALANCE)) IN (''PCM_ALLOCATION IN'', ''PCM_ALLOCATION OUT'')
+						THEN (AMOUNT) 
+						ELSE 0 
+					END) AS ALLOCATED_PROVISION_FOR_DELIQUENCIES_FROM_BRANCH,
+					
+					(ALLOCATED_INCOME_FROM_HO + ALLOCATED_EXPENDITURE_FROM_HO) AS ALLOCATED_PBT_FROM_HO,
+					(ALLOCATED_INCOME_FROM_BRANCH + ALLOCATED_EXPENDITURE_FROM_BRANCH) AS ALLOCATED_PBT_FROM_BRANCH,
+				
+				SUM(CASE 
+                        WHEN UPPER(TRIM(ACCOUNT)) IN (''AC_51070000'', ''AC_51090000'')
+                            AND UPPER(TRIM(COST_CENTER)) NOT IN (''TOTAL_COST CENTER'', ''ALL_COST CENTER'')
+                            AND TRIM(RULE) IN (''S1_Interest_Cost'', ''S2_Interest_Cost'', ''S3_Interest_Cost'', ''S4_Interest_Cost'', ''S1_Periodic_Disbursement'', ''S1_90_Plus_AUM'', ''S2_90_Plus_AUM'', ''S3_90_Plus_AUM'', ''S4_90_Plus_AUM'', ''S1_90_Plus_AUM_HL'', ''S2_90_Plus_AUM_HL'', ''S3_90_Plus_AUM_HL'', ''S4_90_Plus_AUM_HL'', ''S1_90_Plus_AUM_NHL'', ''S2_90_Plus_AUM_NHL'', ''S3_90_Plus_AUM_NHL'', ''S4_90_Plus_AUM_NHL'', ''S1_Disbursements'', ''S2_Disbursements'', ''S3_Disbursements'', ''S4_Disbursements'', ''S1_AUM'', ''S2_AUM'', ''S3_AUM'', ''S4_AUM'', ''S1_AUM_HL'', ''S2_AUM_HL'', ''S3_AUM_HL'', ''S4_AUM_HL'', ''S1_AUM_NHL'', ''S2_AUM_NHL'', ''S3_AUM_NHL'', ''S4_AUM_NHL'', ''S1_PBT_of_Branch'', ''S2_PBT_of_Branch'', ''S3_PBT_of_Branch'', ''S4_PBT_of_Branch'', ''S2_Periodic_Disbursement'', ''S3_Periodic_Disbursement'', ''S4_Periodic_Disbursement'', ''S1_Headcount'', ''S2_Headcount'', ''S3_Headcount'', ''S4_Headcount'', ''S1_New_Business_YTD'', ''S2_New_Business_YTD'', ''S3_New_Business_YTD'', ''S4_New_Business_YTD'', ''S1_No_of_1_Plus_Cases'', ''S2_No_of_1_Plus_Cases'', ''S3_No_of_1_Plus_Cases'', ''S4_No_of_1_Plus_Cases'', ''S1_No_of_Cases_Disbursed'', ''S2_No_of_Cases_Disbursed'', ''S3_No_of_Cases_Disbursed'', ''S4_No_of_Cases_Disbursed'', ''S1_No_of_Live_Cases'', ''S2_No_of_Live_Cases'', ''S3_No_of_Live_Cases'', ''S4_No_of_Live_Cases'', ''S1_Assigned_Cases_AUM'', ''S2_Assigned_Cases_AUM'', ''S3_Assigned_Cases_AUM'', ''S4_Assigned_Cases_AUM'', ''S1_Interest_Rate'', ''S2_Interest_Rate'', ''S3_Interest_Rate'', ''S4_Interest_Rate'', ''S2_and_S3_No_of_Headcount_New_Business_YTD'', ''S1_No_of_Headcount'', ''S4_No_of_Headcount'', ''Copy_to_New_Business_YTD_from_Headcount_Net_Balance_HO'', /*Allocation In */
+							''S1_Interest_Cost'', ''S2_Interest_Cost'', ''S3_Interest_Cost'', ''S4_Interest_Cost'', ''S1_Periodic_Disbursement'', ''S1_90_Plus_AUM'', ''S2_90_Plus_AUM'', ''S3_90_Plus_AUM'', ''S4_90_Plus_AUM'', ''S1_90_Plus_AUM_HL'', ''S2_90_Plus_AUM_HL'', ''S3_90_Plus_AUM_HL'', ''S4_90_Plus_AUM_HL'', ''S1_90_Plus_AUM_NHL'', ''S2_90_Plus_AUM_NHL'', ''S3_90_Plus_AUM_NHL'', ''S4_90_Plus_AUM_NHL'', ''S1_Disbursements'', ''S2_Disbursements'', ''S3_Disbursements'', ''S4_Disbursements'', ''S1_AUM'', ''S2_AUM'', ''S3_AUM'', ''S4_AUM'', ''S1_AUM_HL'', ''S2_AUM_HL'', ''S3_AUM_HL'', ''S4_AUM_HL'', ''S1_AUM_NHL'', ''S2_AUM_NHL'', ''S3_AUM_NHL'', ''S4_AUM_NHL'', ''S1_PBT_of_Branch'', ''S2_PBT_of_Branch'', ''S3_PBT_of_Branch'', ''S4_PBT_of_Branch'', ''S2_Periodic_Disbursement'', ''S3_Periodic_Disbursement'', ''S4_Periodic_Disbursement'', ''S1_Headcount'', ''S2_Headcount'', ''S3_Headcount'', ''S4_Headcount'', ''S1_New_Business_YTD'', ''S2_New_Business_YTD'', ''S3_New_Business_YTD'', ''S4_New_Business_YTD'', ''S1_No_of_1_Plus_Cases'', ''S2_No_of_1_Plus_Cases'', ''S3_No_of_1_Plus_Cases'', ''S4_No_of_1_Plus_Cases'', ''S1_No_of_Cases_Disbursed'', ''S2_No_of_Cases_Disbursed'', ''S3_No_of_Cases_Disbursed'', ''S4_No_of_Cases_Disbursed'', ''S1_No_of_Live_Cases'', ''S2_No_of_Live_Cases'', ''S3_No_of_Live_Cases'', ''S4_No_of_Live_Cases'', ''S1_Assigned_Cases_AUM'', ''S2_Assigned_Cases_AUM'', ''S3_Assigned_Cases_AUM'', ''S4_Assigned_Cases_AUM'', ''S1_Interest_Rate'', ''S2_Interest_Rate'', ''S3_Interest_Rate'', ''S4_Interest_Rate'', ''S1_No_of_Headcount'', ''S4_No_of_Headcount'', ''S2_No_of_Headcount'', ''S3_No_of_Headcount'') /*Allocation Out */ 
+                            AND UPPER(TRIM(VERTICAL)) NOT IN ( ''TOTAL_VERTICAL'' , ''ALL_VERTICAL'') 
+                            AND UPPER(TRIM(PRODUCT)) NOT IN ( ''TOTAL_PRODUCT'', ''ALL_PRODUCT'') 
+                            AND UPPER(TRIM(BALANCE)) IN (''PCM_ALLOCATION IN'', ''PCM_ALLOCATION OUT'')
+                        THEN (AMOUNT)
+                        ELSE 0 
+                    END) AS ALLOCATED_DEPRECIATION_AND_TAX_EXPENSE_FROM_HO,
+				
+				SUM(CASE 
+                        WHEN UPPER(TRIM(ACCOUNT)) IN (''AC_51070000'', ''AC_51090000'')
+                            AND UPPER(TRIM(COST_CENTER)) NOT IN (''TOTAL_COST CENTER'', ''ALL_COST CENTER'')
+                            AND TRIM(RULE) IN (''S1_and_S2_SH_and_Above_No_of_Headcount_New_Business_YTD'', ''S1_09_Uttar_Pradesh'', ''S2_09_Uttar_Pradesh'', ''S1_SH_and_Above'', ''S2_SH_and_Above'', ''S3_SH_and_Above'', ''S4_SH_and_Above'', ''S2_and_S3_No_of_Headcount_New_Business_YTD_PE'',''Copy_to_New_Business_YTD_from_Headcount_Net_Balance_SH_and_Above'', /* Allocation In */ ''S1_09_Uttar_Pradesh'', ''S2_09_Uttar_Pradesh'', ''S1_SH_and_Above'', ''S2_SH_and_Above'', ''S3_SH_and_Above'', ''S4_SH_and_Above'', ''S1_SH_and_Above_No_of_Headcount'', ''S2_SH_and_Above_No_of_Headcount'') /* Allocation Out */ 
+                            AND UPPER(TRIM(VERTICAL)) NOT IN ( ''TOTAL_VERTICAL'' , ''ALL_VERTICAL'') 
+                            AND UPPER(TRIM(PRODUCT)) NOT IN ( ''TOTAL_PRODUCT'', ''ALL_PRODUCT'') 
+                            AND UPPER(TRIM(BALANCE)) IN (''PCM_ALLOCATION IN'', ''PCM_ALLOCATION OUT'')
+                        THEN (AMOUNT)
+                        ELSE 0 
+                    END) AS ALLOCATED_DEPRECIATION_AND_TAX_EXPENSE_FROM_BRANCH,
+					
+				SUM(CASE 
+						WHEN UPPER(TRIM(ACCOUNT)) = ''AC_PROFITLOSS'' 
+							AND UPPER(TRIM(COST_CENTER)) NOT IN (''TOTAL_COST CENTER'', ''ALL_COST CENTER'')
+							AND TRIM(RULE) IN (''S1_Interest_Cost'', ''S2_Interest_Cost'', ''S3_Interest_Cost'', ''S4_Interest_Cost'', ''S1_Periodic_Disbursement'', ''S1_90_Plus_AUM'', ''S2_90_Plus_AUM'', ''S3_90_Plus_AUM'', ''S4_90_Plus_AUM'', ''S1_90_Plus_AUM_HL'', ''S2_90_Plus_AUM_HL'', ''S3_90_Plus_AUM_HL'', ''S4_90_Plus_AUM_HL'', ''S1_90_Plus_AUM_NHL'', ''S2_90_Plus_AUM_NHL'', ''S3_90_Plus_AUM_NHL'', ''S4_90_Plus_AUM_NHL'', ''S1_Disbursements'', ''S2_Disbursements'', ''S3_Disbursements'', ''S4_Disbursements'', ''S1_AUM'', ''S2_AUM'', ''S3_AUM'', ''S4_AUM'', ''S1_AUM_HL'', ''S2_AUM_HL'', ''S3_AUM_HL'', ''S4_AUM_HL'', ''S1_AUM_NHL'', ''S2_AUM_NHL'', ''S3_AUM_NHL'', ''S4_AUM_NHL'', ''S1_PBT_of_Branch'', ''S2_PBT_of_Branch'', ''S3_PBT_of_Branch'', ''S4_PBT_of_Branch'', ''S2_Periodic_Disbursement'', ''S3_Periodic_Disbursement'', ''S4_Periodic_Disbursement'', ''S1_Headcount'', ''S2_Headcount'', ''S3_Headcount'', ''S4_Headcount'', ''S1_New_Business_YTD'', ''S2_New_Business_YTD'', ''S3_New_Business_YTD'', ''S4_New_Business_YTD'', ''S1_No_of_1_Plus_Cases'', ''S2_No_of_1_Plus_Cases'', ''S3_No_of_1_Plus_Cases'', ''S4_No_of_1_Plus_Cases'', ''S1_No_of_Cases_Disbursed'', ''S2_No_of_Cases_Disbursed'', ''S3_No_of_Cases_Disbursed'', ''S4_No_of_Cases_Disbursed'', ''S1_No_of_Live_Cases'', ''S2_No_of_Live_Cases'', ''S3_No_of_Live_Cases'', ''S4_No_of_Live_Cases'', ''S1_Assigned_Cases_AUM'', ''S2_Assigned_Cases_AUM'', ''S3_Assigned_Cases_AUM'', ''S4_Assigned_Cases_AUM'', ''S1_Interest_Rate'', ''S2_Interest_Rate'', ''S3_Interest_Rate'', ''S4_Interest_Rate'', ''S2_and_S3_No_of_Headcount_New_Business_YTD'', ''S1_No_of_Headcount'', ''S4_No_of_Headcount'', ''Copy_to_New_Business_YTD_from_Headcount_Net_Balance_HO'', /*Allocation In */
+							''S1_Interest_Cost'', ''S2_Interest_Cost'', ''S3_Interest_Cost'', ''S4_Interest_Cost'', ''S1_Periodic_Disbursement'', ''S1_90_Plus_AUM'', ''S2_90_Plus_AUM'', ''S3_90_Plus_AUM'', ''S4_90_Plus_AUM'', ''S1_90_Plus_AUM_HL'', ''S2_90_Plus_AUM_HL'', ''S3_90_Plus_AUM_HL'', ''S4_90_Plus_AUM_HL'', ''S1_90_Plus_AUM_NHL'', ''S2_90_Plus_AUM_NHL'', ''S3_90_Plus_AUM_NHL'', ''S4_90_Plus_AUM_NHL'', ''S1_Disbursements'', ''S2_Disbursements'', ''S3_Disbursements'', ''S4_Disbursements'', ''S1_AUM'', ''S2_AUM'', ''S3_AUM'', ''S4_AUM'', ''S1_AUM_HL'', ''S2_AUM_HL'', ''S3_AUM_HL'', ''S4_AUM_HL'', ''S1_AUM_NHL'', ''S2_AUM_NHL'', ''S3_AUM_NHL'', ''S4_AUM_NHL'', ''S1_PBT_of_Branch'', ''S2_PBT_of_Branch'', ''S3_PBT_of_Branch'', ''S4_PBT_of_Branch'', ''S2_Periodic_Disbursement'', ''S3_Periodic_Disbursement'', ''S4_Periodic_Disbursement'', ''S1_Headcount'', ''S2_Headcount'', ''S3_Headcount'', ''S4_Headcount'', ''S1_New_Business_YTD'', ''S2_New_Business_YTD'', ''S3_New_Business_YTD'', ''S4_New_Business_YTD'', ''S1_No_of_1_Plus_Cases'', ''S2_No_of_1_Plus_Cases'', ''S3_No_of_1_Plus_Cases'', ''S4_No_of_1_Plus_Cases'', ''S1_No_of_Cases_Disbursed'', ''S2_No_of_Cases_Disbursed'', ''S3_No_of_Cases_Disbursed'', ''S4_No_of_Cases_Disbursed'', ''S1_No_of_Live_Cases'', ''S2_No_of_Live_Cases'', ''S3_No_of_Live_Cases'', ''S4_No_of_Live_Cases'', ''S1_Assigned_Cases_AUM'', ''S2_Assigned_Cases_AUM'', ''S3_Assigned_Cases_AUM'', ''S4_Assigned_Cases_AUM'', ''S1_Interest_Rate'', ''S2_Interest_Rate'', ''S3_Interest_Rate'', ''S4_Interest_Rate'', ''S1_No_of_Headcount'', ''S4_No_of_Headcount'', ''S2_No_of_Headcount'', ''S3_No_of_Headcount'') /*Allocation Out */ 
+							AND UPPER(TRIM(VERTICAL)) NOT IN ( ''TOTAL_VERTICAL'' , ''ALL_VERTICAL'') 
+							AND UPPER(TRIM(PRODUCT)) NOT IN ( ''TOTAL_PRODUCT'', ''ALL_PRODUCT'') 
+							AND UPPER(TRIM(BALANCE)) IN (''PCM_ALLOCATION IN'', ''PCM_ALLOCATION OUT'')
+						THEN (AMOUNT) 
+						ELSE 0 
+				END) AS ALLOCATED_PAT_FROM_HO,
+				
+				SUM(CASE 
+						WHEN UPPER(TRIM(ACCOUNT)) = ''AC_PROFITLOSS'' 
+							AND UPPER(TRIM(COST_CENTER)) NOT IN (''TOTAL_COST CENTER'', ''ALL_COST CENTER'')
+							AND TRIM(RULE) IN (''S1_and_S2_SH_and_Above_No_of_Headcount_New_Business_YTD'', ''S1_09_Uttar_Pradesh'', ''S2_09_Uttar_Pradesh'', ''S1_SH_and_Above'', ''S2_SH_and_Above'', ''S3_SH_and_Above'', ''S4_SH_and_Above'', ''S2_and_S3_No_of_Headcount_New_Business_YTD_PE'',''Copy_to_New_Business_YTD_from_Headcount_Net_Balance_SH_and_Above'', /* Allocation In */ ''S1_09_Uttar_Pradesh'', ''S2_09_Uttar_Pradesh'', ''S1_SH_and_Above'', ''S2_SH_and_Above'', ''S3_SH_and_Above'', ''S4_SH_and_Above'', ''S1_SH_and_Above_No_of_Headcount'', ''S2_SH_and_Above_No_of_Headcount'') /* Allocation Out */ 
+							AND UPPER(TRIM(VERTICAL)) NOT IN ( ''TOTAL_VERTICAL'' , ''ALL_VERTICAL'') 
+							AND UPPER(TRIM(PRODUCT)) NOT IN ( ''TOTAL_PRODUCT'', ''ALL_PRODUCT'') 
+							AND UPPER(TRIM(BALANCE)) IN (''PCM_ALLOCATION IN'', ''PCM_ALLOCATION OUT'')
+						THEN (AMOUNT) 
+						ELSE 0 
+				END) AS ALLOCATED_PAT_FROM_BRANCH,
+				
+				
+				-----------/* AFTER ALLOCATION */------------
+				
+				
+				SUM(CASE 
+						WHEN UPPER(TRIM(ACCOUNT)) = ''AC_40000000'' 
+							AND UPPER(TRIM(COST_CENTER)) = ''TOTAL_COST CENTER'' 
+							AND UPPER(TRIM(RULE)) = ''PCM_CALCULATION RULES''  
+							AND UPPER(TRIM(VERTICAL)) = ''TOTAL_VERTICAL'' 
+							AND UPPER(TRIM(PRODUCT)) = ''TOTAL_PRODUCT'' 
+							AND UPPER(TRIM(BALANCE)) = ''PCM_NET BALANCE''
+							AND UPPER(TRIM(SOURCE_POOL)) = ''TOTAL SOURCE POOL''
+						THEN (AMOUNT) 
+						ELSE 0 
+					END) AS BRANCH_TOTAL_INCOME_AFTER_ALLOCATION,
+					
+					SUM(CASE 
+						WHEN UPPER(TRIM(ACCOUNT)) = ''AC_41010000'' 
+							AND UPPER(TRIM(COST_CENTER)) = ''TOTAL_COST CENTER''
+							AND UPPER(TRIM(RULE)) = ''PCM_CALCULATION RULES''  
+							AND UPPER(TRIM(VERTICAL)) = ''TOTAL_VERTICAL'' 
+							AND UPPER(TRIM(PRODUCT)) = ''TOTAL_PRODUCT'' 
+							AND UPPER(TRIM(BALANCE)) = ''PCM_NET BALANCE''
+							AND UPPER(TRIM(SOURCE_POOL)) = ''TOTAL SOURCE POOL''
+						THEN (AMOUNT) 
+						ELSE 0 
+					END) AS BRANCH_TOTAL_INTEREST_INCOME_AFTER_ALLOCATION,
+					
+					SUM(CASE 
+						WHEN UPPER(TRIM(ACCOUNT)) IN (''AC_41030000'', ''AC_41040000'', ''AC_42000000'')
+							AND UPPER(TRIM(COST_CENTER)) = ''TOTAL_COST CENTER''
+							AND UPPER(TRIM(RULE)) = ''PCM_CALCULATION RULES''  
+							AND UPPER(TRIM(VERTICAL)) = ''TOTAL_VERTICAL'' 
+							AND UPPER(TRIM(PRODUCT)) = ''TOTAL_PRODUCT'' 
+							AND UPPER(TRIM(BALANCE)) = ''PCM_NET BALANCE''
+							AND UPPER(TRIM(SOURCE_POOL)) = ''TOTAL SOURCE POOL''
+						THEN (AMOUNT) 
+						ELSE 0 
+					END) AS BRANCH_TOTAL_OTHER_INCOME_AFTER_ALLOCATION,
+					
+				SUM(CASE 
+						WHEN UPPER(TRIM(ACCOUNT)) = ''AC_50000000''
+							AND UPPER(TRIM(COST_CENTER)) = ''TOTAL_COST CENTER''
+							AND UPPER(TRIM(RULE)) = ''PCM_CALCULATION RULES''  
+							AND UPPER(TRIM(VERTICAL)) = ''TOTAL_VERTICAL'' 
+							AND UPPER(TRIM(PRODUCT)) = ''TOTAL_PRODUCT'' 
+							AND UPPER(TRIM(BALANCE)) = ''PCM_NET BALANCE''
+							AND UPPER(TRIM(SOURCE_POOL)) = ''TOTAL SOURCE POOL''
+						THEN (AMOUNT) 
+						ELSE 0 
+					END) -
+                SUM(CASE 
+                        WHEN UPPER(TRIM(ACCOUNT)) IN (''AC_51070000'', ''AC_51090000'')
+                            AND UPPER(TRIM(COST_CENTER)) = ''TOTAL_COST CENTER''
+                            AND UPPER(TRIM(RULE)) = ''PCM_CALCULATION RULES''  
+                            AND UPPER(TRIM(VERTICAL)) = ''TOTAL_VERTICAL'' 
+                            AND UPPER(TRIM(PRODUCT)) = ''TOTAL_PRODUCT'' 
+                            AND UPPER(TRIM(BALANCE)) = ''PCM_NET BALANCE''
+                            AND UPPER(TRIM(SOURCE_POOL)) = ''TOTAL SOURCE POOL''
+                        THEN (AMOUNT)
+                        ELSE 0
+                        END) AS BRANCH_TOTAL_EXPENDITURE_AFTER_ALLOCATION,
+						
+				SUM(CASE 
+						WHEN UPPER(TRIM(ACCOUNT)) = ''AC_51060000''
+							AND UPPER(TRIM(COST_CENTER)) = ''TOTAL_COST CENTER''
+							AND UPPER(TRIM(RULE)) = ''PCM_CALCULATION RULES''  
+							AND UPPER(TRIM(VERTICAL)) = ''TOTAL_VERTICAL'' 
+							AND UPPER(TRIM(PRODUCT)) = ''TOTAL_PRODUCT'' 
+							AND UPPER(TRIM(BALANCE)) = ''PCM_NET BALANCE''
+							AND UPPER(TRIM(SOURCE_POOL)) = ''TOTAL SOURCE POOL''
+						THEN (AMOUNT) 
+						ELSE 0 
+					END) AS BRANCH_TOTAL_EMPLOYEE_BENEFIT_EXPENSE_AFTER_ALLOCATION,
+					
+				SUM(CASE 
+						WHEN UPPER(TRIM(ACCOUNT)) IN (''AC_51010000'', ''AC_51020000'', ''AC_51080000'')
+							AND UPPER(TRIM(COST_CENTER)) = ''TOTAL_COST CENTER''
+							AND UPPER(TRIM(RULE)) = ''PCM_CALCULATION RULES''  
+							AND UPPER(TRIM(VERTICAL)) = ''TOTAL_VERTICAL'' 
+							AND UPPER(TRIM(PRODUCT)) = ''TOTAL_PRODUCT'' 
+							AND UPPER(TRIM(BALANCE)) = ''PCM_NET BALANCE''
+							AND UPPER(TRIM(SOURCE_POOL)) = ''TOTAL SOURCE POOL''
+						THEN (AMOUNT) 
+						ELSE 0 
+					END) AS BRANCH_TOTAL_OTHER_OPERATING_EXPENSES_AFTER_ALLOCATION,
+					
+				SUM(CASE 
+						WHEN UPPER(TRIM(ACCOUNT)) = ''AC_51050000''
+							AND UPPER(TRIM(COST_CENTER)) = ''TOTAL_COST CENTER''
+							AND UPPER(TRIM(RULE)) = ''PCM_CALCULATION RULES''  
+							AND UPPER(TRIM(VERTICAL)) = ''TOTAL_VERTICAL'' 
+							AND UPPER(TRIM(PRODUCT)) = ''TOTAL_PRODUCT'' 
+							AND UPPER(TRIM(BALANCE)) = ''PCM_NET BALANCE''
+							AND UPPER(TRIM(SOURCE_POOL)) = ''TOTAL SOURCE POOL''
+						THEN (AMOUNT) 
+						ELSE 0 
+					END) AS BRANCH_TOTAL_PROVISION_FOR_DELIQUENCIES_AFTER_ALLOCATION,
+
+				(BRANCH_TOTAL_INCOME_AFTER_ALLOCATION + BRANCH_TOTAL_EXPENDITURE_AFTER_ALLOCATION) AS BRANCH_TOTAL_PBT_AFTER_ALLOCATION,
+					
+					SUM(CASE 
+                        WHEN UPPER(TRIM(ACCOUNT)) IN (''AC_51070000'', ''AC_51090000'')
+                            AND UPPER(TRIM(COST_CENTER)) = ''TOTAL_COST CENTER''
+                            AND UPPER(TRIM(RULE)) = ''PCM_CALCULATION RULES''  
+                            AND UPPER(TRIM(VERTICAL)) = ''TOTAL_VERTICAL'' 
+                            AND UPPER(TRIM(PRODUCT)) = ''TOTAL_PRODUCT'' 
+                            AND UPPER(TRIM(BALANCE)) = ''PCM_NET BALANCE''
+                            AND UPPER(TRIM(SOURCE_POOL)) = ''TOTAL SOURCE POOL''
+                        THEN (AMOUNT)
+                        ELSE 0 
+                    END) AS BRANCH_TOTAL_DEPRECIATION_AND_TAX_EXPENSE_AFTER_ALLOCATION,
+						
+				SUM(CASE 
+						WHEN UPPER(TRIM(ACCOUNT)) = ''AC_PROFITLOSS'' 
+							AND UPPER(TRIM(COST_CENTER)) = ''TOTAL_COST CENTER''
+							AND UPPER(TRIM(RULE)) = ''PCM_CALCULATION RULES''  
+							AND UPPER(TRIM(VERTICAL)) = ''TOTAL_VERTICAL'' 
+							AND UPPER(TRIM(PRODUCT)) = ''TOTAL_PRODUCT'' 
+							AND UPPER(TRIM(BALANCE)) = ''PCM_NET BALANCE''
+							AND UPPER(TRIM(SOURCE_POOL)) = ''TOTAL SOURCE POOL''
+						THEN (AMOUNT) 
+						ELSE 0 
+				END) AS BRANCH_TOTAL_PAT_AFTER_ALLOCATION
+				
+				FROM
+					(SELECT * FROM DISHA_L2_CURATED.BASE_MODEL_DATA.L2_BRANCH_PROFITABILITY_DETAILS WHERE UPPER(TRIM(BRANCH)) NOT IN (''TOTAL_BRANCH_LOCATION'',''TOTAL_BRANCH'')) BPD
+				INNER JOIN
+					(SELECT BRANCH FROM DISHA_L2_CURATED.BASE_HARDCODE.PCMCS_BRANCH WHERE UPPER(TRIM(DATA_STORAGE)) = ''STORE''
+					AND UPPER(TRIM(PARENT)) NOT IN (''BRANCH'', ''BRANCH LOCATION'', ''TOTAL_BRANCH_LOCATION'', ''TOTAL_BRANCH'', ''BUSINESS STATES'')) PB
+					ON BPD.BRANCH = PB.BRANCH
+				INNER JOIN
+					(SELECT * FROM DISHA_L2_CURATED.BASE_MODEL_DATA.BRANCH_DETAILS WHERE ACTIVATION_FLAG =1) BDSFDC
+					ON SUBSTR(BPD.BRANCH,6) = CAST(BDSFDC.BRANCH_LMS_CODE AS VARCHAR)
+					GROUP BY
+				BPD.BRANCH,
+				BDSFDC.BRANCH_LMS_CODE,
+				BDSFDC.BRANCH_NAME,
+				BDSFDC.BRANCH_STATE_NAME,
+				BDSFDC.DATE_OF_OPENING,
+				BPD.PERIOD || 
+				CASE WHEN UPPER(BPD.PERIOD) IN (''JAN'', ''FEB'', ''MAR'') 
+					THEN LPAD(CAST(SUBSTRING(BPD.YEAR, 3, 2) AS INT) + 1, 2, ''0'')
+				ELSE 
+					SUBSTRING(BPD.YEAR, 3, 2)
+				END,
+				LAST_DAY(TO_DATE(CONCAT(''01-'', MONTH_YEAR), ''DD-MonYY''))				
+			)BID
+			LEFT JOIN
+			(SELECT  TO_CHAR(BUSINESS_DATE, ''MONYY'') AS RISK_REPORT_MONTH,BRANCH_ID,
+				SUM(CASE WHEN UPPER(TRIM(PRODUCT_CATEGORY)) = ''HL''
+					THEN (AUM * 10000000)
+					ELSE 0
+					END) AS HL_AUM,
+			SUM(CASE WHEN UPPER(TRIM(PRODUCT_CATEGORY)) IN (''NHL'', ''5'')
+					THEN (AUM * 10000000)
+					ELSE 0
+					END) AS NHL_AUM,
+			(HL_AUM + NHL_AUM) AS NET_AUM
+			FROM DISHA_MART_ANALYTICS.CREDIT_RISK_MART.RISK_LOAN_ACCOUNT_MART /*WHERE UPPER(TRIM(CURRENT_FLAG)) = ''TRUE'' */
+			GROUP BY BRANCH_ID,TO_CHAR(BUSINESS_DATE, ''MONYY'')) RLM
+			ON RLM.BRANCH_ID = BID.LMS_BRANCH_ID AND RLM.RISK_REPORT_MONTH=BID.MONTH_YEAR
+			LEFT JOIN
+			(SELECT BRANCH_LMS_CODE,TO_CHAR(SANCTION_DATE, ''MONYY'') AS SANC_REPORT_MTH, SUM(SANCTION_COUNT) AS NET_SANCTION_COUNT,SUM(SANCTION_AMOUNT)*10000000 AS NET_SANCTION_AMOUNT, SUM(SUD_COUNT) AS NET_SUD_COUNT, SUM(SUD_AMOUNT)*10000000 AS NET_SUD_AMOUNT FROM DISHA_MART_ANALYTICS.SALES_CREDIT_MART.LOAN_APPLICATION_MART WHERE CURRENT_FLAG = ''TRUE'' 
+			GROUP BY BRANCH_LMS_CODE,TO_CHAR(SANCTION_DATE, ''MONYY'')
+			) LAM_SANC
+			ON LAM_SANC.BRANCH_LMS_CODE = BID.LMS_BRANCH_ID AND LAM_SANC.SANC_REPORT_MTH=BID.MONTH_YEAR
+			LEFT JOIN
+			(SELECT BRANCH_LMS_CODE,TO_CHAR(DEAL_FORWARD_DATE, ''MONYY'') AS DEAL_REPORT_MTH, SUM(LOGIN_COUNT) AS NET_LOGIN_COUNT,SUM(LOGIN_AMOUNT)*10000000 AS NET_LOGIN_AMOUNT FROM DISHA_MART_ANALYTICS.SALES_CREDIT_MART.LOAN_APPLICATION_MART WHERE CURRENT_FLAG = ''TRUE'' GROUP BY BRANCH_LMS_CODE,TO_CHAR(DEAL_FORWARD_DATE, ''MONYY'')
+			) LAM_DEAL
+			ON LAM_DEAL.BRANCH_LMS_CODE = BID.LMS_BRANCH_ID AND LAM_DEAL.DEAL_REPORT_MTH=BID.MONTH_YEAR
+			LEFT JOIN
+			(SELECT  TO_CHAR(LAST_DISBURSAL_DATE, ''MONYY'') AS DISB_REPORT_MONTH,BRANCH_ID,SUM(DISB_AMOUNT) AS NET_DISBURSAL_AMOUNT FROM DISHA_MART_ANALYTICS.SALES_CREDIT_MART.LOAN_ACCOUNT_MART WHERE UPPER(TRIM(CURRENT_FLAG)) = ''TRUE''
+			GROUP BY BRANCH_ID, TO_CHAR(LAST_DISBURSAL_DATE, ''MONYY'')) LAM_DISB
+			ON LAM_DISB.BRANCH_ID = BID.LMS_BRANCH_ID AND LAM_DISB.DISB_REPORT_MONTH=BID.MONTH_YEAR
+            LEFT JOIN
+			(SELECT TO_CHAR(SANCTION_DATE, ''MONYY'') AS SANC_MONTH,BRANCH_LMS_CODE,AVG(SANCTION_ROI) AS DISBURSAL_YIELD FROM DISHA_MART_ANALYTICS.SALES_CREDIT_MART.LOAN_APPLICATION_MART WHERE UPPER(TRIM(CURRENT_FLAG)) = ''TRUE''
+			GROUP BY BRANCH_LMS_CODE,TO_CHAR(SANCTION_DATE, ''MONYY'')) DISB_YLD
+			ON DISB_YLD.BRANCH_LMS_CODE = BID.LMS_BRANCH_ID AND DISB_YLD.SANC_MONTH=BID.MONTH_YEAR
+			LEFT JOIN
+			(SELECT SUM(PROCESSING_FEE) AS NET_PROCESSING_FEE, SUM(PDD_FEE) AS NET_PDD_FEE, SUM(ADMIN_FEE) AS NET_ADMIN_FEE, SUM(TOTAL_FEES_AMOUNT) AS NET_TOTAL_FEES_AMOUNT, SUM(PROPERTY_INSURANCE_FEE) AS NET_PROPERTY_INSURANCE_FEE, SUM(HEALTH_INSURANCE_FEE) AS NET_HEALTH_INSURANCE_FEE, SUM(LIFE_INSURANCE_FEE) AS NET_LIFE_INSURANCE_FEE, TO_CHAR(LOAN_INITIATION_DATE, ''MONYY'') AS FEE_REPORT_MONTH, BRANCH_ID
+			FROM DISHA_MART_ANALYTICS.SALES_CREDIT_MART.LOAN_ACCOUNT_MART WHERE UPPER(TRIM(CURRENT_FLAG)) = ''TRUE''
+			GROUP BY TO_CHAR(LOAN_INITIATION_DATE, ''MONYY''), BRANCH_ID) LACCM_FEE
+			ON LACCM_FEE.BRANCH_ID = BID.LMS_BRANCH_ID AND LACCM_FEE.FEE_REPORT_MONTH = BID.MONTH_YEAR
+			LEFT JOIN 
+			(SELECT SUM(ST.DISBURSEMENT_TARGET_AMT) AS DISBURSAL_TARGET, BR.BRANCH_LMS_CODE, TO_CHAR(ST.MONTH_YEAR, ''MONYY'') AS DISB_TGT_MONTH
+				FROM DISHA_L2_CURATED.BASE_MODEL_DATA.SALES_TARGET ST
+			LEFT JOIN DISHA_L2_CURATED.HRMS.EMPLOYEE_MASTER EMP 
+			ON ST.EMPLOYEE_ID = EMP.EMPLOYEE_ID
+			LEFT JOIN (
+				SELECT BRANCH_LMS_CODE 
+				FROM DISHA_L2_CURATED.BASE_MODEL_DATA.BRANCH_DETAILS 
+				WHERE CURRENT_FLAG = TRUE AND ACTIVATION_FLAG = 1
+			) BR 
+			ON TO_VARCHAR(BR.BRANCH_LMS_CODE) = SUBSTR(REPLACE(EMP.BRANCH, ''- '', ''-''), CHARINDEX(''-'', EMP.BRANCH) + 3)
+			GROUP BY BR.BRANCH_LMS_CODE, TO_CHAR(ST.MONTH_YEAR, ''MONYY'')
+			) DISB_TGT
+			ON BID.LMS_BRANCH_ID = DISB_TGT.BRANCH_LMS_CODE AND BID.MONTH_YEAR = DISB_TGT.DISB_TGT_MONTH
+			LEFT JOIN
+			(SELECT BRANCH_LMS_CODE,
+				SUM(CASE WHEN UPPER(TRIM(DEPARTMENT)) LIKE ''%SALES%'' AND UPPER(TRIM(EMP_LEVEL)) IN (''RELATIONSHIP OFFICER'',''REATIONSHIP OFFICER'',''APPRENTICE TRAINEE'',''INDIVIDUAL RELATIONSHIP MANAGER'',''MANAGEMENT TRAINEE'')
+				THEN 1 
+				ELSE 0
+				END) AS SALES_RO_HEADCOUNT,
+				SUM(CASE WHEN UPPER(TRIM(DEPARTMENT)) LIKE ''%SALES%'' AND UPPER(TRIM(EMP_LEVEL)) = ''RRO''
+				THEN 1 
+				ELSE 0 
+				END) AS SALES_RRO_HEADCOUNT,
+				SUM(CASE WHEN UPPER(TRIM(DEPARTMENT)) LIKE  ''%SALES%'' AND UPPER(TRIM(EMP_LEVEL)) =  ''BRANCH HEAD''
+				THEN 1
+				ELSE 0
+				END) AS SALES_BH_HEADCOUNT,
+				SUM(CASE WHEN UPPER(TRIM(DEPARTMENT)) LIKE ''%CREDIT%'' AND UPPER(TRIM(EMP_LEVEL)) =  ''CREDIT OFFICER''
+				THEN 1
+				ELSE 0
+				END) AS CREDIT_CO_HEADCOUNT,
+				SUM(CASE WHEN UPPER(TRIM(DEPARTMENT)) LIKE  ''%CREDIT%'' AND UPPER(TRIM(EMP_LEVEL)) IN (''CREDIT MANAGER'', ''ASSISTANT MANAGER-CREDIT'', ''DEPUTY MANAGER-CREDIT'', ''DEPUTY MANAGER'', ''MANAGEMENT TRAINEE'')
+				THEN 1
+				ELSE 0
+				END) AS CREDIT_CM_HEADCOUNT
+				FROM 
+				(SELECT * FROM DISHA_L2_CURATED.HRMS.EMPLOYEE_MASTER WHERE ACTIVATION_FLAG = 1 AND DATEOFRELIEVING IS NULL OR DATEOFRELIEVING>CURRENT_DATE) E 
+			LEFT JOIN 
+				(SELECT * FROM DISHA_L2_CURATED.BASE_MODEL_DATA.BRANCH_DETAILS WHERE CURRENT_FLAG= TRUE AND ACTIVATION_FLAG = 1) BR
+				ON TO_VARCHAR(BR.BRANCH_LMS_CODE)=SUBSTR(REPLACE(E.BRANCH, ''- '',''-''), CHARINDEX(''-'',E.BRANCH,0)+3,1000)
+				GROUP BY BRANCH_LMS_CODE) AS EMP_CNT
+				ON EMP_CNT.BRANCH_LMS_CODE =  BID.LMS_BRANCH_ID
+			QUALIFY ROW_NUMBER() OVER (PARTITION BY BID.LMS_BRANCH_ID,BID.MONTH_YEAR ORDER BY BID.MONTH_YEAR)=1 
+	);
+
+    -- STEP 3: INSERT DATA INTO BRANCH_MONTHLY_ACTIVITY_MART
+    INSERT INTO DISHA_MART_ANALYTICS.FINANCE_MART.BRANCH_MONTHLY_ACTIVITY_MART(
+    SELECT
+        PCMCS_BRANCH_ID,
+		LMS_BRANCH_ID,
+		BRANCH_NAME,
+		BRANCH_OPENING_DATE,
+		BRANCH_VINTAGE,
+		STATE_NAME,
+		MONTH_YEAR,
+		MONTH_END_DATE,
+		
+		BRANCH_DIRECT_INCOME_AFTER_ADJ,
+		BRANCH_DIRECT_INTEREST_INCOME_AFTER_ADJ,
+		BRANCH_DIRECT_OTHER_INCOME_AFTER_ADJ,
+		BRANCH_DIRECT_EXPENDITURE_AFTER_ADJ,
+		BRANCH_DIRECT_EMPLOYEE_BENEFIT_EXPENSE_AFTER_ADJ,
+		BRANCH_DIRECT_OTHER_OPERATING_EXPENSES_AFTER_ADJ,
+		BRANCH_DIRECT_PROVISION_FOR_DELIQUENCIES_AFTER_ADJ,
+		BRANCH_DIRECT_PBT_AFTER_ADJ,
+		BRANCH_DIRECT_DEPRECIATION_AND_TAX_EXPENSE,
+		BRANCH_DIRECT_PAT_AFTER_ADJ,
+		
+		ALLOCATED_INCOME_FROM_HO,
+		ALLOCATED_INCOME_FROM_BRANCH,
+		ALLOCATED_INTEREST_INCOME_FROM_HO,
+		ALLOCATED_INTEREST_INCOME_FROM_BRANCH,
+		ALLOCATED_OTHER_INCOME_FROM_HO,
+		ALLOCATED_OTHER_INCOME_FROM_BRANCH,
+		ALLOCATED_EXPENDITURE_FROM_HO,
+		ALLOCATED_EXPENDITURE_FROM_BRANCH,
+		ALLOCATED_EMPLOYEE_BENEFIT_EXPENSE_FROM_HO,
+		ALLOCATED_EMPLOYEE_BENEFIT_EXPENSE_FROM_BRANCH,
+		ALLOCATED_OTHER_OPERATING_EXPENSES_FROM_HO,
+		ALLOCATED_OTHER_OPERATING_EXPENSES_FROM_BRANCH,
+		ALLOCATED_PROVISION_FOR_DELIQUENCIES_FROM_HO,
+		ALLOCATED_PROVISION_FOR_DELIQUENCIES_FROM_BRANCH,
+		ALLOCATED_PBT_FROM_HO,
+		ALLOCATED_PBT_FROM_BRANCH,
+		ALLOCATED_DEPRECIATION_AND_TAX_EXPENSE_FROM_HO,
+		ALLOCATED_DEPRECIATION_AND_TAX_EXPENSE_FROM_BRANCH,
+		ALLOCATED_PAT_FROM_HO,
+		ALLOCATED_PAT_FROM_BRANCH,
+		
+		BRANCH_TOTAL_INCOME_AFTER_ALLOCATION,
+		BRANCH_TOTAL_INTEREST_INCOME_AFTER_ALLOCATION,
+		BRANCH_TOTAL_OTHER_INCOME_AFTER_ALLOCATION,
+		BRANCH_TOTAL_EXPENDITURE_AFTER_ALLOCATION,
+		BRANCH_TOTAL_EMPLOYEE_BENEFIT_EXPENSE_AFTER_ALLOCATION,
+		BRANCH_TOTAL_OTHER_OPERATING_EXPENSES_AFTER_ALLOCATION,
+		BRANCH_TOTAL_PROVISION_FOR_DELIQUENCIES_AFTER_ALLOCATION,
+		BRANCH_TOTAL_PBT_AFTER_ALLOCATION,
+		BRANCH_TOTAL_DEPRECIATION_AND_TAX_EXPENSE_AFTER_ALLOCATION,
+		BRANCH_TOTAL_PAT_AFTER_ALLOCATION,
+		
+		HL_AUM,
+		NHL_AUM,
+		NET_AUM,
+		ROA,
+		NET_DISBURSAL_AMOUNT,
+		DISBURSAL_YIELD,
+		DISBURSAL_TARGET,
+		NET_SANCTION_COUNT,
+		NET_SANCTION_AMOUNT,
+		NET_SUD_COUNT,
+		NET_SUD_AMOUNT,
+		NET_LOGIN_COUNT,
+		NET_LOGIN_AMOUNT,
+		NET_PROCESSING_FEE,
+		NET_PDD_FEE,
+		NET_ADMIN_FEE,
+		NET_TOTAL_FEES_AMOUNT,
+		NET_PROPERTY_INSURANCE_FEE,
+		NET_LIFE_INSURANCE_FEE,
+		NET_HEALTH_INSURANCE_FEE,
+		SALES_RO_HEADCOUNT,
+		SALES_RRO_HEADCOUNT,
+		SALES_BH_HEADCOUNT,
+		CREDIT_CO_HEADCOUNT,
+		CREDIT_CM_HEADCOUNT,
+		BT_IN_CASES,
+		BT_IN_AMOUNT,
+		BT_OUT_CASES,
+		BT_OUT_AMOUNT,
+		HL_BOUNCE_COUNT,
+		NHL_BOUNCE_COUNT,
+		HL_30PLUS_COUNT,
+		NHL_30PLUS_COUNT,
+		HL_60PLUS_COUNT,
+		NHL_60PLUS_COUNT,
+		HL_90PLUS_COUNT,
+		NHL_90PLUS_COUNT,
+        MART_PROCESSING_DATE
+    FROM DISHA_MART_ANALYTICS.FINANCE_MART.BRANCH_MONTHLY_ACTIVITY_PREFINAL
+    );
+
+-- RETURN SUCCESS MESSAGE
+    RETURN ''BRANCH MONTHLY ACTIVITY MART POPULATED SUCCESSFULLY!'';
+END;
+';
